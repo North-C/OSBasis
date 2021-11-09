@@ -1,0 +1,29 @@
+SECTION MBR align=16 vstart=0x7c00
+    mov ax,cs
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
