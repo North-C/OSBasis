@@ -145,4 +145,3 @@ ata_lba_read:
     
     times 510-($-$$) db 0
             db 0x55, 0xaa
->>>>>>> refs/remotes/origin/master
