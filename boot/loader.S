@@ -15,7 +15,7 @@ section loader vstart=LOADER_BASE_ADDR          ; 加载到0x900
              dd 0x00CF9800          ; 4k,32位,非64位，界限1111, P=1,0级,非系统段，
                             ; 可执行，非依从，不可读，a清0: 1000
     ; 数据段 和 栈段 定义到一起
-    DATA_STACK_SEG  dd 0x0000ffff
+    DATA_STACK_SEG  dd 0x0000ffff 
                 dd 0x00CF9200   
 
     ; 音频段，显示文本
@@ -25,9 +25,12 @@ section loader vstart=LOADER_BASE_ADDR          ; 加载到0x900
     GDT_LIMIT     dw   ($-GDT_BASE)-1               ; GDT 的界限，长度减一
 
     times 60 dq 0       ; 保留60个描述符
-    
+;    段描述符的索引 
+    SELECTOR_CODE equ (0x0001 << 3) + TI_GDT + RPL0
+    SELECTOR_DATA equ (0x0002 << 3) + TI_GDT + RPL0
+    SELECTOR_VIDEO equ (0x0003 << 3) + TI_GDT + RPL0
     ; 定义GDTR的初始值
-    GDTR     dw  GDT_LIMIT
+    gdt_ptr     dw  GDT_LIMIT
             dd GDT_BASE
 
     loadermsg  db ' 2 loader in real.'  
@@ -37,13 +40,15 @@ section loader vstart=LOADER_BASE_ADDR          ; 加载到0x900
     ards_num dw 0               ; ards的数量
 
     mem_byte  dd 0              ; 保存检测到的内存的大小
-
+    
+    mem_volume_err db 'get mem bytes error.'
 ;-------------------------------
 ; Enter Protect mode
 loader_start:
+
+;------------ 进行内存容量检测 --------------------
 ;------------ 调用0xe820获取内存 ------------------
-        xor eax, eax
-        mov eax, 0xE820
+        
 
         xor ebx, ebx            ; 第一次调用置0,之后会自动修改他
         mov es,  LOADER_BASE_ADDR     ; ES:DI 保存ARDS的内容
@@ -52,6 +57,8 @@ loader_start:
         mov edx, 0x534d4150            ; 签名
         
 .call_0xE820:
+        xor eax, eax
+        mov eax, 0xE820
         int 0x15        ; 调用0x15功能
         ; 判断是否调用成功
         jc .call_0xE820             
@@ -65,12 +72,26 @@ loader_start:
         jne .call_0xE820
 
         ; 确定内存的容量: 找到ards描述的最大内存值即最大
+        ; 冒泡排序找到最大值
+        mov cx, [ards_num]      
+        mov ebx, ards_buf       
+        xor edx, edx            ; 保存最大的内存容量
+.find_max_mem_area:
+        mov eax, [ebx]
+        add eax, [ebx + 8]      ; LengthLow: 内存的长度低32位
+        add ebx, 20             ; 下一个ards
+        cmp edx, eax    
+
+        jg .continue
+        mov edx, eax    ; 小，则edx获取到较大值
+.continue:
+        loop .find_max_mem_area ; 下一次循环
 
         ; 获得结果的话
         jmp .get_mem_byte
 ;------------- 调用 0xe801 --------------------
-        mov ax, 0xE801
 .call_0xE801:
+        mov ax, 0xE801
         int 0x15      
 
         jc .call_0xE801  ; 是否调用成功
@@ -83,28 +104,43 @@ loader_start:
         xor edx,edx
         mov dx,bx
         shl edx, 16
+
         add edx, esi
 
         jmp .get_mem_byte
 ;------------- 调用0x88 ------------------------
-        mov ax, 0x88
+        
 .call_0x88:
+        mov ah, 0x88
         int 0x15
 
-        jc .call_0x88
+        jc .error_hlt
+        and eax, 0x0000FFFF
+
         ; 计算内存大小
         xor edx,edx
         mov bx, 1024    ; AX * 1024 + 1MB       
-        mul bx          ; 可能超出AX的限制
-        add dx, 0x10    
+        mul bx          ; 可能超出AX的限制    
         shl edx,16
-        or edx, ax
+        or edx, eax
+        add edx, 0x100000     ; 加上1MB， 因为只返回1MB以上的内存
+
+        jmp .get_mem_byte
+
+.error_hlt:
+        mov sp, LOADER_BASE_ADDR      
+        mov bp, mem_volume_err       ; ES:BP = 字符串地址
+        mov cx, 17              ; CX 字符串长度
+        mov ax, 0x1301          ; AH 子功能号  AL 显示输出方式
+        mov bx, 0x001f          ; 页号为0, 蓝底粉红字
+        mov dx, 0x1800          
+        int 0x10                ; 10号中断
+        jmp $
 
 ; 填写mem_byte的内容
 .get_mem_byte:
         mov [mem_byte], edx
-
-
+        
 ; 显示字符串
         mov sp, LOADER_BASE_ADDR      
         mov bp, loadermsg       ; ES:BP = 字符串地址
@@ -116,7 +152,7 @@ loader_start:
 
         cli             ; 关闭中断
 
-        lgdt [GDTR]             ; 加载GDT
+        lgdt [gdt_ptr]             ; 加载GDT
 
         ; 打开A20地址线
         in al,0x92
@@ -129,7 +165,7 @@ loader_start:
         mov cr0, eax
 
 ; 刷新流水线，进入保护模式
-        jmp dword 0x0008: ProtectMode
+        jmp dword SELECTOR_CODE: ProtectMode
 
     [bits 32]
 ProtectMode:
@@ -191,7 +227,7 @@ ProtectMode:
 ; ----------- 进入内核 ---------------------------------
 enter_kernel:
         call kernel_init
-        mov esp, 0xc009f000                     ;??
+        mov esp, 0xc009f000             ; 为了整齐，设置为了9f000
         jmp KERNEL_ENTRY_POINT          ; 跳转到内核入口处
 
 ; ----------------- 准备页目录表和页表 ---------------------
@@ -256,13 +292,52 @@ kernel_init:
         ; 通过ELF的格式来进行加载
         ; e_entry offset=24 入口地址, 4B
         ; e_phoff offset=28 程序头表的偏移量位置 4B
+        ; e_pentsize offset=42 程序头表每个条目的大小 2B
         ; e_phnum offset=44 记录段的个数,2B
 
         ; 段本身： p_type offset=0 段的类型 4B大小
+        mov dx, [KERNEL_BIN_BASE_ADDR + 42]     ; 程序头的大小
+        mov ebx, [KERNEL_BIN_BASE_ADDR + 28]    ; 段的开始位置
+        add ebx, KERNEL_BIN_BASE_ADDR           ; 地址
+
+        mov cx, [KERNEL_BIN_BASE_ADDR + 44]     ; 段的个数，也是循环次数
+.each_segment: 
+        ; 判断 p_type是否为 PT_NULL, p_type 4B大小, 
+        cmp byte [ebx + 0], PT_NULL
+        je .PT_NULL
+
+        ; 参数入栈，调用mem_cpy进行段复制
+        ; dst src size 从右向左开始
+        push dword [ebx + 16]           ; 段在文件当中的大小 p_filesz
+
+        mov eax, [ebx + 4]      ; 段在文件中的位置 p_offset
+        add eax , KERNEL_BIN_BASE_ADDR          ; 加上文件的基地址
+        push eax        ; src
+        
+        push dword [ebx + 8]           ; dst, 本段在内存当中的起始虚拟地址
+        call mem_cpy             ; 段复制
+        add esp, 12             ; 清理栈当中的三个参数
+.PT_NULL:
+        add ebx, edx
+        loop .each_segment              
 
 ; 拷贝内核执行文件的段到指定位置
+; 参数： dst src size， 从右向左开始入栈
 mem_cpy:
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    
+        cld     ; 清楚 DF,让dst和src的参数自动增加
+        push ebp
+        mov ebp, esp    ; 栈从上向下扩展，注意这里栈的内容，调用前入栈了函数的返回地址
+
+        push ecx        ; 压栈保存
+
+        mov edi, [ebp + 8]
+        mov esi, [ebp + 12]
+        mov ecx, [ebp + 16]
+        rep movsb
+
+        pop ecx
+        pop ebp
+        ret
 
 
 
