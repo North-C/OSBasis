@@ -12,6 +12,8 @@ void main(void){
     put_char('2');
     put_char('\b');
     put_char('3');
+    put_str("I am kernel\n");
+    put_int(0x00021a3f);
     while(1);
 }
 

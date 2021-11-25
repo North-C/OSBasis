@@ -50,7 +50,7 @@ SECTION MBR vstart=0x7c00
     mov eax,LOADER_START_SECTOR
     call ata_lba_read
 
-    jmp LOADER_BASE_ADDR
+    jmp LOADER_BASE_ADDR + 0x300
     ; jmp $
 
 ;----------------------------

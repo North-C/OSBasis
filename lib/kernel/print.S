@@ -121,8 +121,8 @@ put_char:
         cld
         mov ecx, 960    ; 2000-80= 1920字符，一次搬运四个，一共搬运960次
 
-        mov esi, 0xc00b80a0     ; 第一行行首
-        mov edi, 0xc00b800      ; 第0行行首
+        mov esi, 0xb80a0     ; 第一行行首
+        mov edi, 0xb8000      ; 第0行行首
         rep movsd
 
 ; 最后一行设置为空白
