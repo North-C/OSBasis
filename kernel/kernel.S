@@ -9,6 +9,8 @@ extern put_str     ; 声明外部函数
 section .data
 intr_str db "interrupt occur!", 0xa, 0
 
+extern idt_table
+
 global intr_entry_table
 intr_entry_table:
 
@@ -16,21 +18,44 @@ intr_entry_table:
 %macro VECTOR 2         
 section .text
 intr%1entry:
-    %2
-    push intr_str      
-    call put_str       ; 打印中断发生信息
-    add esp, 4         ; 跳过参数
+    %2          ; 占位置
+
+    push ds
+    push es
+    push fs
+    push gs
+    pushad
+
+
+    ; push intr_str      
+    ; call put_str       ; 打印中断发生信息
+    ; add esp, 4         ; 跳过参数
 
     mov al, 0x20    ; 操作OCW2, EOI设为1,中断结束通知
     out 0xa0, al
     out 0x20, al
 
-    add esp, 4      ; 越过error_code
-    iret            ; 从中断返回
+    push %1     ; 压入中断号
+
+    call [idt_table + %1 * 4]   ; 中断处理函数
+    jmp intr_exit
 
 section .data       ; 编译器会将属性相同的section合并成一个segment, 之后所有的中断都会结合到一起，形成连续的数组
     dd intr%1entry  ; 存储中断处理程序的入口地址
 %endmacro
+
+section .text
+global intr_exit:
+intr_exit:
+    add esp, 4      ; 越过中断号
+    popad
+    pop gs
+    pop fs
+    pop es
+    pop ds
+    add esp, 4      ; 跳过error_code
+    iretd            ; 从中断返回
+
 
 VECTOR 0x00, ZERO
 VECTOR 0x01, ZERO
