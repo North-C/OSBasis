@@ -26,7 +26,6 @@ intr%1entry:
     push gs
     pushad
 
-
     ; push intr_str      
     ; call put_str       ; 打印中断发生信息
     ; add esp, 4         ; 跳过参数
@@ -55,7 +54,6 @@ intr_exit:
     pop ds
     add esp, 4      ; 跳过error_code
     iretd            ; 从中断返回
-
 
 VECTOR 0x00, ZERO
 VECTOR 0x01, ZERO
