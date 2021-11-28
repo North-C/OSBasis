@@ -55,7 +55,8 @@ put_char:
         out dx, al
         mov dx, 0x03d5  ; 数据读写端口，获得或设置光标位置
         in al, dx
-
+        mov ah, al
+        
         ; 获取低8位
         mov dx, 0x03d4
         mov al, 0x0f
@@ -69,10 +70,10 @@ put_char:
                                 ; 加上主函数的返回地址 四个字节，所以从第36个字节开始
         cmp cl, 0x0d    ; 回车符CR
         jz .is_carriage_return
-        cmp cl, 0xa     ; 换行符
+        cmp cl, 0x0a     ; 换行符
         jz .is_line_feed
 
-        cmp cl, 0x8     ; 回退backspace
+        cmp cl, 0x08     ; 回退backspace
         jz .is_backspace
         jmp .put_other
 
@@ -107,7 +108,6 @@ put_char:
         xor dx, dx
         mov ax, bx
         mov si, 80
-
         div si
         sub bx, dx      ; 去掉余数取整，便回到行首
 
@@ -120,7 +120,6 @@ put_char:
 .roll_screen:           ; 滚屏，将屏幕的1~24行搬运到0~23行
         cld
         mov ecx, 960    ; 2000-80= 1920字符，一次搬运四个，一共搬运960次
-
         mov esi, 0xb80a0     ; 第一行行首
         mov edi, 0xb8000      ; 第0行行首
         rep movsd

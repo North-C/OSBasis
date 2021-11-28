@@ -8,35 +8,38 @@ SECTION MBR vstart=0x7c00
     mov gs,ax
     mov sp,0x7c00
     mov ax,0xb800
-    mov fs,ax
+    mov gs,ax
 
 ; Clear screen
 ; function: int 0x00
-   mov ax,0002h
-   int 10H
+    mov ax, 0600h
+    mov bx, 0700h
+    mov cx, 0                   
+    mov dx, 184fh
+    int 10H
 ; Only bx can be used as Index register
     ; xor bx,bx
 
     ; mov byte [fs: bx+0x10], 'G'
     ; mov byte [fs: bx+0x11], 0x81
 
-    mov byte [fs: 0x00], 'I'
-    mov byte [fs: 0x01], 10000001B
+    ; mov byte [fs: 0x00], 'I'
+    ; mov byte [fs: 0x01], 10000001B
 
-    mov byte [fs: 0x02], 'n'
-    mov byte [fs: 0x03], 10000001B
+    ; mov byte [fs: 0x02], 'n'
+    ; mov byte [fs: 0x03], 10000001B
 
-    mov byte [fs: 0x04], ' '
-    mov byte [fs: 0x05], 0x81
+    ; mov byte [fs: 0x04], ' '
+    ; mov byte [fs: 0x05], 0x81
 
-    mov byte [fs: 0x06], 'M'
-    mov byte [fs: 0x07], 0x81
+    ; mov byte [fs: 0x06], 'M'
+    ; mov byte [fs: 0x07], 0x81
 
-    mov byte [fs: 0x08], 'B'
-    mov byte [fs: 0x09], 0x81
+    ; mov byte [fs: 0x08], 'B'
+    ; mov byte [fs: 0x09], 0x81
 
-    mov byte [fs: 0x0a], 'R'
-    mov byte [fs: 0x0b], 0x81
+    ; mov byte [fs: 0x0a], 'R'
+    ; mov byte [fs: 0x0b], 0x81
 
     ; mov byte [fs: 0x0c], 'i'
     ; mov byte [fs: 0x0d], 0x81
@@ -121,23 +124,6 @@ ata_lba_read:
         add si,2
         loop .readword
 
-        ; pop ax
-        ; mov bx,256
-        ; xor dx,dx
-        ; mul bx
-        ; mov cx,ax   
-        ; mov dx,0x1f0
-        ; mov di,si
-        ; rep insw        
-
-        ; 64位的参考
-        ; mov rax, 256         ; to read 256 words = 1 sector
-        ; xor dx, dx
-        ; mov bl, cl           ; read CL sectors
-        ; mul bx
-        ; mov rcx, rax         ; RCX is counter for INSW
-        ; mov rdx, 0x1F0       ; Data port, in and out
-        ; rep insw             ; in to [RDI]
         pop dx
         pop bx
         pop ax

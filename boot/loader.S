@@ -42,7 +42,6 @@ section loader vstart=LOADER_BASE_ADDR          ; 加载到0x900
 ;     loadermsg  db ' 2 loader in real.'  
 ;-------------------------------
 loader_start:
-
 ;------------ 进行内存容量检测 --------------------
 ;------------ 调用0xe820获取内存 ------------------
         xor ebx, ebx            ; 第一次调用置0,之后会自动修改他     
@@ -177,11 +176,11 @@ ProtectMode:
         mov ax, SELECTOR_VIDEO             ; Video段索引,TI = 0, RPL = 0
         mov gs, ax
         
-        mov byte [gs: 0x60],'P' 
-        mov byte [gs: 0x61], 0x81
+      ;  mov byte [gs: 0x60],'P' 
+      ;  mov byte [gs: 0x61], 0x81
 
-        mov byte [gs: 0x62],'S' 
-        mov byte [gs: 0x63], 0x81
+      ;  mov byte [gs: 0x62],'S' 
+      ;  mov byte [gs: 0x63], 0x81
 
 ; -------------- 加载kernel ------------------------
         mov eax, KERNEL_START_SECTOR            ; 内核对应的起始扇区号
@@ -217,7 +216,7 @@ ProtectMode:
         lgdt [gdt_ptr]
 
         ; 通过视频段显示 来测试是否更新成功
-        mov byte [gs:160], 'O'
+    ;   mov byte [gs:160], 'O'
 
 ; 刷新流水线
         jmp SELECTOR_CODE:enter_kernel
@@ -226,7 +225,7 @@ enter_kernel:
         call kernel_init                ; <!-- TODO:调用之后无法返回,是elf文件格式的问题吗？
         mov esp, 0xc009f000             ; 为了整齐，设置为了9f000
 
-        mov byte [gs:170], 'K'  
+     ;  mov byte [gs:170], 'K'  
 
         jmp KERNEL_ENTRY_POINT          ; 跳转到内核入口处
 
