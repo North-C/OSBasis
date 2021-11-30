@@ -1,32 +1,49 @@
-.PHONY:build image clean
+BUILD_DIR= ./build
+ENTRY_POINT= 0xc0001500
+AS = nasm
+CC = gcc-4.4
+LD = ld
+LIB = -I lib/ -I lib/kernel/ -I lib/user/ -I kernel/ -I device/
+ASFLAGS = -f elf
+CFLAGS = -Wall $(LIB) -c -fno-builtin -W -Wstrict-prototypes \
+         -Wmissing-prototypes
+LDFLAGS = -m elf_i386 -Ttext $(ENTRY_POINT) -e main -Map $(BUILD_DIR)/kernel.map
+OBJ =  $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o $(BUILD_DIR)/timer.o $(BUILD_DIR)/kernel.o $(BUILD_DIR)/print.o \
+        $(BUILD_DIR)/debug.o
 
-img=/home/john/os/hd30M.img
+$(BUILD_DIR)/main.o : kernel/main.c lib/kernel/print.h \
+      lib/stdint.h kernel/init.h
+      $(CC) $(CFLAGS)  $< -o $@           # $< 依赖文件当中的第一个文件
+                                          # $@ 规则中的目标文件名集合，所有目标文件
+$(BUILD_DIR)/init.o : kernel/init.c kernel/init.h lib/kernel/print.h \
+      lib/stdint.h kernel/init.h
+      $(CC) $(CFLAGS) $<  -o $@
 
-mbr_src=mbr.S
-loader_src=loader.S
+$(BUILD_DIR)/interrupt.o : kernel/interrupt.c kernel/interrupt.h \
+      lib/stdint.h 
+      $(CC) $(CFLAGS) $<  -o $@
 
-mbr=mbr.bin
-loader=loader.bin
+$(BUILD_DIR)/timer.o : device/timer.c device/timer.h lib/stdint.h \
+      lib/kernel/io.h   lib/kernel/print.h
+      $(CC) $(CFLAGS) $<  -o $@
 
-mbr_loader:
-    nasm -I build/include/ -o boot/mbr.bin boot/mbr.S
-    nasm -I build/include/ -o boot/loader.bin boot/loader.S
+$(BUILD_DIR)/debug.o : kernel/debug.c kernel/debug.h \
+      lib/kernel/print.h lib/stdint.h kernel/interrupt.h
+      $(CC) $(CFLAGS) $<  -o $@
 
-build:
-    #nasm -f elf -o lib/kernel/print.o lib/kernel/print.S
-    #gcc -m32 -I lib/kernel -c -o kernel/main.o  kernel/main.c
-    #ld -m elf_i386 -Ttext 0xc0001500 -e main -o kernel/kernel.bin kernel/main.o lib/kernel/print.o
 
-    gcc -m32 -I lib/kernel -I lib/ -I kernel/ -c -fno-builtin -o build/main.o kernel/main.c
-    nasm -f elf -o build/print.o lib/kernel/print.S
-    nasm -f elf -o build/kernel.o kernel/kernel.S
-    gcc -m32 -I lib/kernel/ -I lib/ -I kernel/ -c -fno-builtin -o build/interrupt.o kernel/interrupt.c
-    gcc -m32 -I lib/kernel -I lib/ -I kernel -c -fno-builtin -o build/init.o kernel/init.c
-    ld -m elf_i386 -Ttext 0xc0001500 -e main -o kernel/kernel.bin kernel/main.o lib/kernel/print.o
+#######################################################################################
+mk_dir:
+    if [[ ! -d $(BUILD_DIR) ]]; then mkdir $(BUILD_DIR); fi
 
-image:
-  #  @-rm -rf $(img)
-  #  bximage -hd -mode="flat" -size=30 -q $(img)
-    
-    dd if=./build/loader.bin of=/usr/bin/hd60M.img bs=512 seek=2 count=3 conv=notrunc  
-    dd if=./build/kernel.bin of=/usr/bin/hd60M.img bs=512 seek=9 count=200 conv=notruncdd if=./build/mbr.bin of=/usr/bin/hd60M.img bs=512 count=1 conv=notrunc
+hd:
+    dd  if=$(BUILD_DIR)/kernel.bin   \
+        of=/usr/bin/hd60M.img  \
+        bs = 512 count=200 seek=9 conv=notrunc
+
+clean:
+    cd $(BUILD_DIR) && rm -f ./*
+
+build: $(BUILD_DIR)/kernel.bin
+
+all: mk_dir build hd

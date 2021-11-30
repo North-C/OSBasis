@@ -12,6 +12,8 @@
 #define PIC_S_CTRL 0xa0     // 从片的控制端口
 #define PIC_S_DATA 0xa1     // 从片的数据端口
 
+#define EFLAGS_IF 0x00000200        // 设置IF
+
 // 中断描述符的结构体
 struct gate_desc{
     uint16_t func_offset_low_word;
@@ -87,6 +89,7 @@ static void general_intr_handler(uint8_t vec_nr){
     put_int(vec_nr);
     put_char('\n');
 }
+
 /* 一般中断处理函数注册及异常名称注册 */
 static void exception_init(void){
     int i;
