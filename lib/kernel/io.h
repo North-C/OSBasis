@@ -20,6 +20,7 @@ static inline void outsw(uint16_t port, const void* addr, uint32_t word_cnt){
 static inline uint8_t inb(uint16_t port){
     uint8_t data;
     asm volatile("inb %w1, %b0" : "=a"(data) : "Nd" (port));
+    return data;
 }
 
 /* 将从端口port读入的word_cnt个字写入addr */ 

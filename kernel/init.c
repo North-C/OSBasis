@@ -4,7 +4,8 @@
 #include "../device/timer.h"
 
 void init_all(){
-    put_str("Start init\n");
+    put_str("init all\n");
     idt_init(); // 初始化并加载IDT
     timer_init();      // 初始化PIT
+    mem_init();     // 初始化内存管理系统
 }

@@ -4,12 +4,9 @@
 ; 压入占位的0,替代ERROR_CODE的位置空间
 %define ZERO push 0 
 
-extern put_str     ; 声明外部函数
-
-section .data
-intr_str db "interrupt occur!", 0xa, 0
-
 extern idt_table
+section .data
+
 
 global intr_entry_table
 intr_entry_table:
@@ -34,9 +31,9 @@ intr%1entry:
     out 0xa0, al
     out 0x20, al
 
-    push %1     ; 压入中断号
+    push %1     ; 压入中断号    对应vec_nr参数
 
-    call [idt_table + %1 * 4]   ; 中断处理函数
+    call [idt_table + %1 * 4]   ; 中断处理函数 调用general_intr
     jmp intr_exit
 
 section .data       ; 编译器会将属性相同的section合并成一个segment, 之后所有的中断都会结合到一起，形成连续的数组
@@ -44,7 +41,7 @@ section .data       ; 编译器会将属性相同的section合并成一个segmen
 %endmacro
 
 section .text
-global intr_exit:
+global intr_exit
 intr_exit:
     add esp, 4      ; 越过中断号
     popad

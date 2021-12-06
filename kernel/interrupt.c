@@ -13,6 +13,7 @@
 #define PIC_S_DATA 0xa1     // 从片的数据端口
 
 #define EFLAGS_IF 0x00000200        // 设置IF
+#define GET_EFLAGS(EFLAGS_VAR) asm volatile("pushfl; popl %0;": "=g" (EFLAGS_VAR))    // 通过栈输出到EFLAGS_VAR
 
 // 中断描述符的结构体
 struct gate_desc{
@@ -119,6 +120,33 @@ static void exception_init(void){
     intr_name[17] = "#AC Alignment Check Exception";
     intr_name[18] = "#MC Machine-Check Exception";
     intr_name[19] = "#XF SIMD Floating-Point Exception";
+}
+// 打开中断，返回开中断之前的状态
+enum intr_status enable_intr(void){
+    enum intr_status old_status;
+    old_status = get_intr_status();
+    if(old_status == INT_OFF){
+        asm volatile("sti;": :);
+    }
+    return old_status;
+}
+enum intr_status disable_intr(void){
+    enum intr_status old_status;
+    old_status = get_intr_status();
+    if(old_status == INT_ON){
+        asm volatile("cli;": : :"memory");
+    }
+    return old_status;
+}
+
+enum intr_status get_intr_status(void){
+    uint32_t eflags;
+    GET_EFLAGS(eflags);
+     return eflags & EFLAGS_IF ? INT_ON : INT_OFF;
+}
+
+enum intr_status set_intr_status(enum intr_status status){
+    return status & INT_ON ? enable_intr() : disable_intr();
 }
 
 /* 完成所有中断的初始化和加载工作 */

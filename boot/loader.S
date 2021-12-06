@@ -9,11 +9,11 @@ section loader vstart=LOADER_BASE_ADDR          ; 加载到0x900
 
 ; 构建段描述符  
     CODE_SEG dd 0x0000ffff         ; 低32位 段基址 段界限
-             dd 0x00CF9800          ; 4k,32位,非64位，界限1111, P=1,0级,非系统段，
+             dd DESC_CODE_HIGH4                   ; 0x00CF9800          ; 4k,32位,非64位，界限1111, P=1,0级,非系统段，
                             ; 可执行，非依从，不可读，a清0: 1000
     ; 数据段 和 栈段 定义到一起
     DATA_STACK_SEG  dd 0x0000ffff 
-                dd 0x00CF9200   
+                dd  DESC_DATA_HIGH4                             ; 0x00CF9200   
 
     ; 音频段，显示文本
     VIDEO_SEG  dd 0x80000007     ; 从0xb8000 到 0xbffff 的文本显示区，4KB为粒度进行分段，分为7段
@@ -171,7 +171,7 @@ ProtectMode:
         mov ds, ax
         mov es, ax
         mov ss, ax
-        mov esp, LOADER_STACK_TOP      
+        mov esp, LOADER_STACK_TOP  
         ; 显示 Protect mode OK
         mov ax, SELECTOR_VIDEO             ; Video段索引,TI = 0, RPL = 0
         mov gs, ax
@@ -198,7 +198,7 @@ ProtectMode:
         ; 获取段基地址
         mov ebx, [gdt_ptr + 2]
         ; GDT中的video段的段地址加上 0xc0000000
-        or dword [gdt_ptr + 0x18 + 4], 0xc0000000       
+        or dword [ebx + 0x18 + 4], 0xc0000000       
         ; GDT的基地址也映射到内核虚拟空间
         add dword [gdt_ptr + 2], 0xc0000000
 
@@ -222,7 +222,7 @@ ProtectMode:
         jmp SELECTOR_CODE:enter_kernel
 ; ----------- 进入内核 ---------------------------------
 enter_kernel:
-        call kernel_init                ; <!-- TODO:调用之后无法返回,是elf文件格式的问题吗？
+        call kernel_init                
         mov esp, 0xc009f000             ; 为了整齐，设置为了9f000
 
      ;  mov byte [gs:170], 'K'  
@@ -301,24 +301,26 @@ setup_page:
         inc esi
         loop .clear_page_byte
 
-    ; 循环创建页目录表项        
+    ; 循环创建页目录表项（PDE）        
     .create_pde:
         mov eax, PAGE_DIR_TABLE_POS     ; 页目录表
-        add eax, 0x10000        ; 第一个页表的位置
+        add eax, 0x1000        ; 注意第一个页表的位置，刚好超出1MB      
         mov ebx, eax    ; ebx保存页表基地址
         
         ; 处理目录项0和目录项768，将其都指向第一个页表，用于映射内核的地址
-        or eax, PG_RW_W | PG_US_U | PG_P        ; 可写 1 ，普通用户 0，处于内存中 1
+        or eax, PG_US_U | PG_RW_W | PG_P        ; 注意顺序：普通用户 0，可写 1，处于内存中 1
         mov [PAGE_DIR_TABLE_POS], eax           ;  0 号页目录表
         mov [PAGE_DIR_TABLE_POS + 0xc00], eax   ; 0xc0000000以上 对应的页目录表项是第 768个
         
         ; 最后一个页表项指向页目录表自己的地址
         sub eax, 0x1000
         mov [PAGE_DIR_TABLE_POS + 4092], eax
+        
+        ; 创建页表项(PTE) --- 这是第0个页目录表项对应的页表
         ; 一个页表能够覆盖4MB的空间，总共包含1024个页表项
         mov ecx, 256            ; 只用到1MB的内存，所以只需要256个页表项即可
         mov esi, 0
-        mov edx, PG_US_S | PG_RW_W | PG_P       ; 属性为7, US=1超级用户, W=1, P=1
+        mov edx, PG_US_U | PG_RW_W | PG_P       ; 属性为7, US=1超级用户, W=1, P=1
     ; 内循环创建页表项,只初始化访问属性，指向的地址为0
     .create_pte:
         mov [ebx + esi * 4], edx
@@ -326,14 +328,14 @@ setup_page:
         add edx, 4096
         inc esi
         loop .create_pte
-; 创建其他PTE的页表项
 
+        ; 创建内核其他页表的PDE
         mov eax, PAGE_DIR_TABLE_POS
-        add eax, 0x2000
-        or eax, PG_RW_R | PG_US_U | PG_P
+        add eax, 0x2000                 ; 第二个页表的位置
+        or eax, PG_US_U | PG_RW_R | PG_P        ; 页目录项的属性
         mov ebx, PAGE_DIR_TABLE_POS
 
-        mov ecx, 254      ; 额外创建
+        mov ecx, 254      ; 范围是769 ~ 1022的目录项数目
         mov esi, 769
     .create_kernel_pde:
         mov [ebx + esi * 4], eax
