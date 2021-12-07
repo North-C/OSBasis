@@ -1,6 +1,8 @@
 {
     "cmake.configureOnOpen": false,
     "files.associations": {
-        "global.h": "c"
+        "global.h": "c",
+        "memory.h": "c",
+        "thread.h": "c"
     }
 }

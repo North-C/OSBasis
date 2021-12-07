@@ -15,7 +15,7 @@ intr_entry_table:
 %macro VECTOR 2         
 section .text
 intr%1entry:
-    %2          ; 占位置
+    %2          ; 错误码,或者占位置
 
     push ds
     push es
@@ -31,7 +31,7 @@ intr%1entry:
     out 0xa0, al
     out 0x20, al
 
-    push %1     ; 压入中断号    对应vec_nr参数
+    push %1     ; 压入中断号 对应vec_nr参数
 
     call [idt_table + %1 * 4]   ; 中断处理函数 调用general_intr
     jmp intr_exit
@@ -44,7 +44,7 @@ section .text
 global intr_exit
 intr_exit:
     add esp, 4      ; 越过中断号
-    popad
+    popad           ; 不会管 esp
     pop gs
     pop fs
     pop es

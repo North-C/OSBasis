@@ -80,7 +80,7 @@ static void page_table_add(void* _vaddr, void* _page_phyaddr){
 
     // 第一步，找到页表,先确认PDE创建完毕,没有则需要先创建PDE
     // 第二步，构建和安装PTE
-    uint32_t* pde = pde_ptr(vaddr);         // TODO: 无法访问pde和pte的地址，出现缺页
+    uint32_t* pde = pde_ptr(vaddr);      
     uint32_t* pte = pte_ptr(vaddr);
 
     if( (*pde) & 0x00000001){        // P=1,存在物理内存当中
@@ -126,7 +126,7 @@ void* malloc_page(enum pool_flags pf, uint32_t pg_cnt){
             return NULL;    
         }
         // 进行地址的映射
-        page_table_add((void*) vaddr, phy_addr);        // TODO: 进行映射的时候出现了问题  
+        page_table_add((void*) vaddr, phy_addr);     
         vaddr += PG_SIZE;         // 注意每次增长的大小是4KB
     }
     return vaddr_start;
