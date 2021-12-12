@@ -17,7 +17,7 @@ section .text
 intr%1entry:
     %2          ; 错误码,或者占位置
 
-    push ds
+    push ds     ; 保护所有寄存器映像
     push es
     push fs
     push gs
@@ -34,7 +34,7 @@ intr%1entry:
     push %1     ; 压入中断号 对应vec_nr参数
 
     call [idt_table + %1 * 4]   ; 中断处理函数 调用general_intr
-    jmp intr_exit
+    jmp intr_exit   
 
 section .data       ; 编译器会将属性相同的section合并成一个segment, 之后所有的中断都会结合到一起，形成连续的数组
     dd intr%1entry  ; 存储中断处理程序的入口地址
@@ -42,15 +42,15 @@ section .data       ; 编译器会将属性相同的section合并成一个segmen
 
 section .text
 global intr_exit
-intr_exit:
+intr_exit:          ; 退出中断，恢复上下文环境
     add esp, 4      ; 越过中断号
-    popad           ; 不会管 esp
+    popad           ; 进入中断时的逆过程 （不会管esp）
     pop gs
     pop fs
     pop es
     pop ds
     add esp, 4      ; 跳过error_code
-    iretd            ; 从中断返回
+    iretd            ; 从中断返回，进入iret
 
 VECTOR 0x00, ZERO
 VECTOR 0x01, ZERO

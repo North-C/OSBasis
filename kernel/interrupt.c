@@ -35,6 +35,10 @@ extern intr_handler intr_entry_table[IDT_DESC_CNT];
 char* intr_name[IDT_DESC_CNT];      //用于保存异常的名字
 intr_handler idt_table[IDT_DESC_CNT];   // 目标中断处理函数数组
 
+/* 注册中断处理函数 vec_nr即中断向量号，function是中断处理函数 */
+void register_handler(uint8_t vec_nr, intr_handler function){
+    idt_table[vec_nr] = function;
+}
 
 /* 初始化可编程中断控制器8259A */
 static void pic_init(void){
@@ -85,10 +89,23 @@ static void general_intr_handler(uint8_t vec_nr){
     if(vec_nr == 0x27 || vec_nr == 0x2f){       // ICW2设置的起始向量号0x20 + 接口号IRQ7和IRQ15
         return ;
     }
-    // 实际的处理也只是输出一下中断向量号
+    /* 优化一下输出 */
+    set_cursor(0);  // 将光标重置到屏幕最左上角
+    put_str("!!!!! execution message  start !!!!!");
+    set_cursor(88);
+    put_str(intr_name[vec_nr]);
+    if(vec_nr == 14){       // 如果是缺页中断Page fault
+        int page_fault_vaddr = 0;
+        asm volatile("movl %%cr2, %0": "=r"(page_fault_vaddr));     // r eax/ebx/ecx/edx/edi/esi中的任意一个
+        put_str("\npage fault addr is "); put_int(page_fault_vaddr);
+    }
+    put_str("\n!!!!  execution message end !!!!");
+    while(1);
+    /* // 实际的处理也只是输出一下中断向量号
     put_str("int vector: 0x");  
     put_int(vec_nr);
     put_char('\n');
+ */    
 }
 
 /* 一般中断处理函数注册及异常名称注册 */
@@ -121,7 +138,7 @@ static void exception_init(void){
     intr_name[18] = "#MC Machine-Check Exception";
     intr_name[19] = "#XF SIMD Floating-Point Exception";
 }
-// 打开中断，返回开中断之前的状态
+/* 打开中断，返回开中断之前的状态 */
 enum intr_status enable_intr(void){
     enum intr_status old_status;
     old_status = get_intr_status();
@@ -130,6 +147,8 @@ enum intr_status enable_intr(void){
     }
     return old_status;
 }
+
+/* 关闭中断，返回关闭以前的状态 */
 enum intr_status disable_intr(void){
     enum intr_status old_status;
     old_status = get_intr_status();
@@ -139,12 +158,14 @@ enum intr_status disable_intr(void){
     return old_status;
 }
 
+/* 获取当前的中断状态 */
 enum intr_status get_intr_status(void){
     uint32_t eflags;
     GET_EFLAGS(eflags);
      return eflags & EFLAGS_IF ? INT_ON : INT_OFF;
 }
 
+/* 依据status来打开或者关闭中断，返回原来的中断状态 */
 enum intr_status set_intr_status(enum intr_status status){
     return status & INT_ON ? enable_intr() : disable_intr();
 }
