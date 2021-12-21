@@ -4,7 +4,7 @@
 #include "io.h"
 #include "print.h"
 
-#define IDT_DESC_CNT 0X21   // 一共支持的中断总数
+#define IDT_DESC_CNT 0x30   // 总共支持的中断总数
 
 #define PIC_M_CTRL 0x20     // 主片的控制端口
 #define PIC_M_DATA 0x21     // 主片的数据端口
@@ -54,8 +54,8 @@ static void pic_init(void){
     outb(PIC_S_DATA, 0x02);
     outb(PIC_S_DATA, 0x01);
 
-    // 打开主片上的IR0,即只接受时钟中断
-    outb(PIC_M_DATA, 0xfe);
+    // 打开主片上的IR0,即只接受时钟中断 0xfe
+    outb(PIC_M_DATA, 0xfd);     // 测试键盘，只打开键盘中断，其他全部关闭 0xfd
     outb(PIC_S_DATA, 0xff);
 
     put_str("  pic_init done\n");
@@ -91,7 +91,7 @@ static void general_intr_handler(uint8_t vec_nr){
     }
     /* 优化一下输出 */
     set_cursor(0);  // 将光标重置到屏幕最左上角
-    put_str("!!!!! execution message  start !!!!!");
+    put_str("!!!!! execution message  start !!!!!\n");
     set_cursor(88);
     put_str(intr_name[vec_nr]);
     if(vec_nr == 14){       // 如果是缺页中断Page fault
@@ -99,7 +99,7 @@ static void general_intr_handler(uint8_t vec_nr){
         asm volatile("movl %%cr2, %0": "=r"(page_fault_vaddr));     // r eax/ebx/ecx/edx/edi/esi中的任意一个
         put_str("\npage fault addr is "); put_int(page_fault_vaddr);
     }
-    put_str("\n!!!!  execution message end !!!!");
+    put_str("\n!!!!  execution message end !!!!\n");
     while(1);
     /* // 实际的处理也只是输出一下中断向量号
     put_str("int vector: 0x");  
@@ -143,7 +143,7 @@ enum intr_status enable_intr(void){
     enum intr_status old_status;
     old_status = get_intr_status();
     if(old_status == INT_OFF){
-        asm volatile("sti;": :);
+        asm volatile("sti": :);
     }
     return old_status;
 }
@@ -153,7 +153,7 @@ enum intr_status disable_intr(void){
     enum intr_status old_status;
     old_status = get_intr_status();
     if(old_status == INT_ON){
-        asm volatile("cli;": : :"memory");
+        asm volatile("cli": : :"memory");
     }
     return old_status;
 }

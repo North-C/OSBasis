@@ -20,26 +20,26 @@ int main(void){
     // put_int((uint32_t) addr);
     // put_str("\n"); 
 
-    thread_start("k_thread_a", 31, k_thread_a, "argA ");
-    thread_start("k_thread_b", 8, k_thread_b, "argB ");
+  //  thread_start("k_thread_a", 31, k_thread_a, "argA ");
+  //  thread_start("k_thread_b", 8, k_thread_b, "argB ");
 
     enable_intr();      // 打开中断
-    while(1){
-        put_str("Main ");
+    while(1); //{
+  //      console_put_str("Main ");
         // print_thread_list();
-    };
+  //  };
     return 0;
 }
 
 void  k_thread_a(void* arg){
     while(1){
-        put_str((char*)arg);
+        console_put_str((char*)arg);
     }
 }
 
 void  k_thread_b(void* arg){
     while(1){
-        put_str((char*)arg);
+        console_put_str((char*)arg);
     }
 }
 

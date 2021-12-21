@@ -204,7 +204,7 @@ static void mem_pool_init(uint32_t all_mem){
 
 
 /* 内存管理初始化 */
-void mem_init(){
+void mem_init(void){
     put_str("mem_init start\n");
     uint32_t mem_bytes_total = (*(uint32_t*)(0xb00));
     mem_pool_init(mem_bytes_total);      // 初始化内存池

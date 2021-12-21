@@ -4,19 +4,19 @@
 section loader vstart=LOADER_BASE_ADDR          ; 加载到0x900      
 
 ; 确定GDT的位置
-    GDT_BASE  dd 0x00000000        ; GDT的第一个段描述符，规定要设置为0
+    GDT_BASE:  dd 0x00000000        ; GDT的第一个段描述符，规定要设置为0
               dd 0x00000000
 
 ; 构建段描述符  
-    CODE_SEG dd 0x0000ffff         ; 低32位 段基址 段界限
+    CODE_SEG: dd 0x0000ffff         ; 低32位 段基址 段界限
              dd DESC_CODE_HIGH4                   ; 0x00CF9800          ; 4k,32位,非64位，界限1111, P=1,0级,非系统段，
                             ; 可执行，非依从，不可读，a清0: 1000
     ; 数据段 和 栈段 定义到一起
-    DATA_STACK_SEG  dd 0x0000ffff 
+    DATA_STACK_SEG:  dd 0x0000ffff 
                 dd  DESC_DATA_HIGH4                             ; 0x00CF9200   
 
     ; 音频段，显示文本
-    VIDEO_SEG  dd 0x80000007     ; 从0xb8000 到 0xbffff 的文本显示区，4KB为粒度进行分段，分为7段
+    VIDEO_SEG:  dd 0x80000007     ; 从0xb8000 到 0xbffff 的文本显示区，4KB为粒度进行分段，分为7段
                dd 0x00C0920b     ; 本质是一个数据段
     
     GDT_SIZE  equ $ - GDT_BASE

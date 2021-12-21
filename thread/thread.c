@@ -6,6 +6,7 @@
 #include "interrupt.h"
 #include "../lib/kernel/list.h"
 #include "debug.h"
+#include "print.h"
 
 #define PG_SIZE 4096
 
@@ -16,6 +17,36 @@ struct list thread_ready_list;      // 线程就绪队列
 struct list thread_all_list;        // 所有任务队列
 static struct list_elem* thread_tag;    // 队列当中的线程节点
 
+
+// 线程阻塞自己，修改状态为stat
+void thread_block(enum task_status stat){
+
+    ASSERT(((stat == TASK_HANGING) || (stat == TASK_BLOCKED) || (stat == TASK_WAITING)));
+    enum intr_status old_status = disable_intr();
+    struct task_struct* cur_thread = running_thread();
+    cur_thread->status = stat;          // 设置线程状态
+    schedule();                         // 进行调度
+
+    set_intr_status(old_status);
+}
+
+// 将线程pthread唤醒
+void thread_unblock(struct task_struct* pthread){
+    enum intr_status old_status = disable_intr();
+
+    // 判断是否需要唤醒
+    ASSERT(((pthread->status == TASK_HANGING) || (pthread->status == TASK_BLOCKED) || (pthread->status == TASK_WAITING)));
+    if(pthread->status != TASK_READY ){
+        // 是否已经加入到就绪队列当中
+        ASSERT(!list_search(&thread_ready_list, &pthread->general_tag));
+        if(list_search(&thread_ready_list, &pthread->general_tag)){
+            PANIC("thread_unblock: blocked thread in ready_list\n");
+        }
+        list_push(&thread_ready_list, &pthread->general_tag);   // 放到就绪队列的最前面
+        pthread->status = TASK_READY;
+    }
+    set_intr_status(old_status);
+}
 
 // 执行线程切换
 extern void switch_to(struct task_struct* cur, struct task_struct* old);
@@ -130,7 +161,8 @@ void thread_init(){
     put_str("thread_init done\n");
 }
 
-
+/*
 void print_thread_list(){
     print_list(&thread_ready_list, thread_tag);
 }
+*/

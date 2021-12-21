@@ -11,4 +11,5 @@ enum intr_status enable_intr(void);
 enum intr_status disable_intr(void);
 enum intr_status get_intr_status(void);
 enum intr_status set_intr_status(enum intr_status);
+void register_handler(uint8_t vec_nr, intr_handler function);
 #endif
