@@ -55,7 +55,7 @@ static void pic_init(void){
     outb(PIC_S_DATA, 0x01);
 
     // 打开主片上的IR0,即只接受时钟中断 0xfe
-    outb(PIC_M_DATA, 0xfd);     // 测试键盘，只打开键盘中断，其他全部关闭 0xfd
+    outb(PIC_M_DATA, 0xfc);     // 测试键盘，只打开键盘中断，其他全部关闭 0xfd
     outb(PIC_S_DATA, 0xff);
 
     put_str("  pic_init done\n");

@@ -4,8 +4,11 @@
 #include "io.h"
 #include "global.h"
 #include "debug.h"
+#include "ioqueue.h"
 
 #define KBD_BUF_PORT 0x60       // 键盘buffer寄存器端口号0x60
+struct ioqueue kbd_buf;     // 缓冲区
+
 
 /* 转移字符定义部分控制字符 */
 #define esc '\033'
@@ -172,8 +175,13 @@ static void intr_keyboard_handler(void){
         uint8_t index = (scancode &= 0x00ff);
         char cur_char = keymap[index][shift];       // 决定选择哪一个输出
         // ASCII码不为0
-        if(cur_char){
-            put_char(cur_char);
+        if(cur_char){   // 加入缓冲区
+
+            if(!ioq_full(&kbd_buf)){
+                put_char(cur_char); // 临时输出一下
+                ioq_putchar(&kbd_buf, cur_char);
+            }
+            // put_char(cur_char);
             return;
         }
 
@@ -199,6 +207,8 @@ static void intr_keyboard_handler(void){
 /* 键盘初始化 */
 void keyboard_init(){
     put_str("keyboard init start\n");
+    ioqueue_init(&kbd_buf);     // 初始化缓冲区
     register_handler(0x21, intr_keyboard_handler);  // 注册键盘中断处理函数
     put_str("keyboard init done\n");
 }
+

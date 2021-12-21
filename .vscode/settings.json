@@ -3,6 +3,7 @@
     "files.associations": {
         "global.h": "c",
         "memory.h": "c",
-        "thread.h": "c"
+        "thread.h": "c",
+        "interrupt.h": "c"
     }
 }
