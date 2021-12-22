@@ -6,6 +6,7 @@
 #include "keyboard.h"
 #include "console.h"
 #include "memory.h"
+#include "../userprog/tss.h"
 
 void init_all(){
     put_str("init all\n");
@@ -15,4 +16,5 @@ void init_all(){
     timer_init();      // 初始化PIT
     console_init();
     keyboard_init();
+    tss_init();     // tss初始化
 }

@@ -4,7 +4,10 @@
 #include "global.h"
 #include "debug.h"
 
- bool ioq_empty(struct ioqueue* ioq);
+bool ioq_empty(struct ioqueue* ioq);
+static int32_t next_pos(int32_t pos);
+static void ioq_wait(struct task_struct** waiter);
+static void wakeup(struct task_struct** waiter);
 
 /* 初始化环形队列 */
 void ioqueue_init(struct ioqueue* ioq){

@@ -39,14 +39,15 @@ int memcmp(const void* a_, const void* b_, uint32_t size){
 char* strcpy(char* dst_, const char* src_){
     ASSERT(src_ != NULL && dst_ != NULL);
     char* dst = dst_;
-    while(*dst_++ == *src_++)        
+    while((*dst_++ = *src_++)) ;       
+
     return dst;
 }
 
 /* 计算字符串str的长度 */
 uint32_t strlen(const char* str){
     ASSERT(str != NULL);
-    char* p = str;
+    const char* p = str;        // 不能丢失const属性!!!!!!
     while(*p++);
     return (p - str - 1);
 }
@@ -82,7 +83,7 @@ char* strrchr(const char* string, const uint8_t ch){
         }
         string++;
     }
-    return last_char;
+    return (char*)last_char;    // 进行强制类型转换,消去const的属性
 }
 
 /* 将字符串 dst_和 src_ 拼接到一起, 返回拼接后的地址 */

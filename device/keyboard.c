@@ -178,7 +178,7 @@ static void intr_keyboard_handler(void){
         if(cur_char){   // 加入缓冲区
 
             if(!ioq_full(&kbd_buf)){
-                put_char(cur_char); // 临时输出一下
+               // put_char(cur_char); // 临时输出一下
                 ioq_putchar(&kbd_buf, cur_char);
             }
             // put_char(cur_char);
