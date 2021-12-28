@@ -74,7 +74,7 @@ void tss_init(){
     
     // TSS描述符
     // TSS作为第四个描述符,放到第4个位置, 0x900 + 0x20 = 0x920
-    *((struct gdt_desc*)0xc0000920) = make_gdt_desc((uint32_t*)0, tss_size - 1, TSS_ATTR_HIGH, TSS_ATTR_LOW);
+    *((struct gdt_desc*)0xc0000920) = make_gdt_desc((uint32_t*)&tss, tss_size - 1, TSS_ATTR_HIGH, TSS_ATTR_LOW);
     
     // 用户代码段描述符
     *((struct gdt_desc*)0xc0000928) = make_gdt_desc((uint32_t*)0, (uint32_t) 0xfffff, GDT_ATTR_HIGH, GDT_ATTR_LOW_CODE_DPL3);

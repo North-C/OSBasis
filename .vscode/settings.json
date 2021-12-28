@@ -4,6 +4,9 @@
         "global.h": "c",
         "memory.h": "c",
         "thread.h": "c",
-        "interrupt.h": "c"
+        "interrupt.h": "c",
+        "list.h": "c",
+        "debug.h": "c",
+        "string.h": "c"
     }
 }

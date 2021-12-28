@@ -77,4 +77,19 @@ struct gdt_desc{
     uint8_t high_base_byte;     // 高32位的段基地址
 };
 
+// ---------------------- EFLAGS -------------------------------
+#define EFLAGS_MBS  (1 << 1)
+#define EFLAGS_IF_1     (1 << 9)
+#define EFLAGS_IF_0     0
+#define EFLAGS_IOPL_3   (3 << 12)
+
+#define EFLAGS_IOPL_0   (0 << 12)
+
+#define NULL  ((void*)0)
+#define bool int
+#define DIV_ROUND_UP(X, STEP)   ((X + STEP +1) /STEP)   // 向上整除
+#define true 1
+#define false 0
+
+#define PG_SIZE 4096
 #endif

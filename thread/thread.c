@@ -1,15 +1,15 @@
 #include "thread.h"
-#include "string.h"
-#include "memory.h"
+#include "../lib/string.h"
+#include "../kernel/memory.h"
 #include "stdint.h"
 #include "global.h"
 #include "interrupt.h"
 #include "../lib/kernel/list.h"
 #include "debug.h"
 #include "print.h"
+#include "../userprog/process.h"
 
 #define PG_SIZE 4096
-
 
 
 struct task_struct* main_thread;    // 主线程PCB
@@ -64,14 +64,16 @@ void schedule(void){
         cur_thread->status = TASK_READY;
     }else{
         // 另一种情况就是被阻塞，这时不需要处理就绪队列，因为不处于就绪状态，不在该队列上
+
     }
-    // 选一个任务来执行
+    // 选一个任务来执行 
     ASSERT(!list_empty(&thread_ready_list));       
-    thread_tag = NULL;      // thread_tag 清空
-    thread_tag = list_pop(&thread_ready_list);
-    struct task_struct* task = elem2entry(thread_tag, struct task_struct, general_tag);
-    task->status = TASK_RUNNING;
-    switch_to(cur_thread, task);
+    thread_tag = NULL;      // thread_tag 清空 
+    thread_tag = list_pop(&thread_ready_list);  
+    struct task_struct* task = elem2entry(thread_tag, struct task_struct, general_tag); // 由标记获取到 任务节点 
+    task->status = TASK_RUNNING;    
+    process_activate(task);         // 激活页表等 
+    switch_to(cur_thread, task); 
 }
 
 /* 获取当前正在运行线程的PCB指针 */
@@ -95,12 +97,14 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
 
     // 留出线程栈的空间
     pthread->self_kstack -= sizeof(struct thread_stack);        // 栈设置到地址最低端，即栈顶
+    
     // 定义线程栈的内容
     struct thread_stack* kthread = (struct thread_stack*)pthread->self_kstack;
     kthread->eip = kernel_thread;               // 设置要执行的函数
     kthread->function = function;       
     kthread->func_arg = func_arg;
     kthread->ebp = kthread->ebx = kthread->edi = kthread->esi = 0;      // 将这几个寄存器初始化为0
+    
 }
 
 /* 初始化线程PCB的名字name和优先级priority */

@@ -12,8 +12,11 @@ void bitmap_init(struct bitmap* btmp){
 
 /* 判断位图btmp中第bit_idx位是否为1 */
 bool bitmap_scan_test(struct bitmap* btmp, uint32_t bit_idx){
+    if(bit_idx < btmp->btmp_bytes_len){   // 防止溢出
+        return false;
+    }   
     uint32_t byte_idx = bit_idx / 8;        // 索引数组下标
-    uint32_t bit_odd = bit_idx % 8;
+    uint32_t bit_odd = bit_idx % 8;     // 取余,用于索引数组内的位
 
     return (btmp->bits[byte_idx]) & ( BITMAP_MASK << bit_odd);
 }
@@ -41,7 +44,7 @@ int bitmap_scan(struct bitmap* btmp, uint32_t cnt){
     if(cnt == 1) return free_bit_start;
     
     // 剩下多少个位没检查
-    uint32_t bit_left = (btmp->btmp_bytes_len * 8 - free_bit_start);
+    uint32_t bit_left = (btmp->btmp_bytes_len * 8 - free_bit_start - 1);    // 这里应该多减去1,防止边界溢出
     uint32_t next_bit = free_bit_start + 1;
     uint32_t count = 1;        // 记录找到的空闲位的个数
 

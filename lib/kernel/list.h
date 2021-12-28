@@ -6,14 +6,15 @@
 #define elem2entry(elem_ptr, struct_type, struct_member) \
         (struct_type*)((int)elem_ptr - offset(struct_type, struct_member))
 
-/* 自定义函数类型，用于list_traversal */
-typedef bool (function)(struct list_elem*, int arg);
+
 /* 双向链表，管理线程的PCB */
 struct list_elem{       // 没有存储，只需要链接PCB即可
     struct list_elem* front;
     struct list_elem* next;
 };
 
+/* 自定义函数类型，用于list_traversal */
+typedef bool (function)(struct list_elem*, int arg);    // 先定义struct list_elem类型
 struct list{
     struct list_elem head;
     struct list_elem tail;

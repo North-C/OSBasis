@@ -2,6 +2,7 @@
 #define __THREAD_THREAD_H
 #include "stdint.h"
 #include "list.h"
+#include "memory.h"
 
 /* 自定义通用函数类型 */
 typedef void thread_func(void*);    // 定义返回值为void，参数为void*的函数thread_func
@@ -72,6 +73,7 @@ struct task_struct{
     struct list_elem all_list_tag;      // 线程队列thread_all_list中的节点
 
     uint32_t* pgdir;            // 进程自己页表的虚拟地址，只有进程有页表，而线程沒有页表
+    struct virtual_addr userprog_vaddr;     //用户进程的虚拟地址
     uint32_t stack_magic;       // 魔数设计为0x19870916，栈的边界标记，用于检测栈的溢出。中断处理时可以检测是否PCB被初始化
 };
 
