@@ -94,20 +94,23 @@ void create_user_vaddr_bitmap(struct task_struct* user_prog){
 /* 创建用户进程 */
 void process_execute(void* filename, char* name){
     struct task_struct* thread = get_kernel_pages(1);   // 内核PCB
-    init_thread(thread, name, default_prio);        // 初始化
-    create_user_vaddr_bitmap(thread);       // 用户虚拟地址
+    init_thread(thread, name, default_prio);        // 初始化线程
+    create_user_vaddr_bitmap(thread);       // 分配用户虚拟地址空间
 
+    // 将start_process作为执行函数
     thread_create(thread, start_process, filename);        // 将self_kstack放到栈的栈顶，地址最低端
-    thread->pgdir = create_page_dir();    
+    thread->pgdir = create_page_dir();      // 页表配置
 
     enum intr_status old = disable_intr();  //关闭中断
 
+    // 加入到任务队列
     ASSERT(!list_search(&thread_ready_list, &thread->general_tag));
     list_append(&thread_ready_list, &thread->general_tag);
 
     ASSERT(!list_search(&thread_all_list, &thread->all_list_tag));
     list_append(&thread_all_list, &thread->all_list_tag);
 
+    // 恢复中断状态
     set_intr_status(old);
 }
 

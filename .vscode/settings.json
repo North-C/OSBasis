@@ -7,6 +7,10 @@
         "interrupt.h": "c",
         "list.h": "c",
         "debug.h": "c",
-        "string.h": "c"
+        "string.h": "c",
+        "stdint.h": "c",
+        "syscall.h": "c",
+        "sync.h": "c",
+        "syscall_init.h": "c"
     }
 }

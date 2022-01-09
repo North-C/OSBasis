@@ -8,6 +8,8 @@
 #include "debug.h"
 #include "print.h"
 #include "../userprog/process.h"
+#include "syscall.h"
+#include "sync.h"
 
 #define PG_SIZE 4096
 
@@ -17,6 +19,15 @@ struct list thread_ready_list;      // 线程就绪队列
 struct list thread_all_list;        // 所有任务队列
 static struct list_elem* thread_tag;    // 队列当中的线程节点
 
+static struct lock pid_lock;       // 进程pid的锁
+
+static pid_t allocate_pid(){
+    static pid_t next_pid = 0;
+    lock_acquire(&pid_lock);
+    next_pid++;
+    lock_release(&pid_lock);
+    return next_pid;
+}
 
 // 线程阻塞自己，修改状态为stat
 void thread_block(enum task_status stat){
@@ -124,6 +135,7 @@ void init_thread(struct task_struct* pthread, char* name, int priority){
     pthread->pgdir = NULL;
     // self_kstack是栈顶地址,PCB占据1页的大小，设置到最高处。
     pthread->self_kstack = (uint32_t*)((uint32_t)pthread + PG_SIZE);    // pthread地址做一下uint32_t类型转换
+    pthread->pid = allocate_pid();
     pthread->stack_magic = 0x19870916;      // 自定义的魔数
 }
 
@@ -161,6 +173,7 @@ void thread_init(){
     put_str("start init thread\n");
     list_init(&thread_all_list);
     list_init(&thread_ready_list);
+    lock_init(&pid_lock);
     make_main_thread();         // 生成主线程
     put_str("thread_init done\n");
 }

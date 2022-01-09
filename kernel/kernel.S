@@ -102,4 +102,28 @@ VECTOR 0x2d, ZERO   ; fpu 浮点单元异常
 VECTOR 0x2e, ZERO   ; 硬盘
 VECTOR 0x2f, ZERO   ; 保留
 
+; 0x80号中断
+[bits 32]
+extern syscall_table
+section .text
+global syscall_handler
+syscall_handler:
+    push ds     ; 保护所有寄存器映像
+    push es
+    push fs
+    push gs
+    pushad
+    
+    ; 参数系统调用号
+    push  0x80            
+    ; 传入参数
+    push edx            ; 三个参数
+    push ecx
+    push ebx
 
+    ; 调用处理函数
+    call [syscall_table + eax * 4]   ; 中断处理函数 调用syscall_table
+    add esp, 12         ; 移动栈顶位置，越过3个参数
+
+    mov [esp + 8 * 4], eax      ; 将eax的值存入内核栈当中eax的位置
+    jmp intr_exit  

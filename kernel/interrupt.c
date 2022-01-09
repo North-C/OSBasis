@@ -4,7 +4,7 @@
 #include "io.h"
 #include "print.h"
 
-#define IDT_DESC_CNT 0x30   // 总共支持的中断总数
+#define IDT_DESC_CNT 0x81   // 总共支持的中断总数
 
 #define PIC_M_CTRL 0x20     // 主片的控制端口
 #define PIC_M_DATA 0x21     // 主片的数据端口
@@ -34,6 +34,9 @@ extern intr_handler intr_entry_table[IDT_DESC_CNT];
 
 char* intr_name[IDT_DESC_CNT];      //用于保存异常的名字
 intr_handler idt_table[IDT_DESC_CNT];   // 目标中断处理函数数组
+
+extern uint32_t syscall_handler(void);      // 系统调用的中断处理函数
+
 
 /* 注册中断处理函数 vec_nr即中断向量号，function是中断处理函数 */
 void register_handler(uint8_t vec_nr, intr_handler function){
@@ -79,6 +82,8 @@ static void idt_desc_init(void){
     for(i = 0; i < IDT_DESC_CNT; i++){
         make_idt_desc(&idt[i], IDT_DESC_ATTR_DPL0, intr_entry_table[i]);
     }
+    //系统调用中断，用户特权级,对应syscall_handler的处理函数
+    make_idt_desc(&idt[0x80], IDT_DESC_ATTR_DPL3, syscall_handler);
     put_str(" idt_desc_init done\n");
 }
 
@@ -97,7 +102,7 @@ static void general_intr_handler(uint8_t vec_nr){
     if(vec_nr == 14){       // 如果是缺页中断Page fault
         int page_fault_vaddr = 0;
         asm volatile("movl %%cr2, %0": "=r"(page_fault_vaddr));     // r eax/ebx/ecx/edx/edi/esi中的任意一个
-        put_str("\npage fault addr is "); put_int(page_fault_vaddr);
+        put_str("\n\t page fault addr is "); put_int(page_fault_vaddr);
     }
     put_str("\n!!!!  execution message end !!!!\n");
     while(1);
@@ -137,6 +142,8 @@ static void exception_init(void){
     intr_name[17] = "#AC Alignment Check Exception";
     intr_name[18] = "#MC Machine-Check Exception";
     intr_name[19] = "#XF SIMD Floating-Point Exception";
+
+   // intr_name[0x80] = "#CALL System call--- getpid";
 }
 /* 打开中断，返回开中断之前的状态 */
 enum intr_status enable_intr(void){

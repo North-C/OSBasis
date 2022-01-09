@@ -1,6 +1,6 @@
 #ifndef __THREAD_THREAD_H
 #define __THREAD_THREAD_H
-#include "stdint.h"
+#include "../lib/stdint.h"
 #include "list.h"
 #include "memory.h"
 
@@ -62,6 +62,7 @@ struct thread_stack{        // switch_to的时候使用
 /* 进程或者线程的PCB */
 struct task_struct{
     uint32_t* self_kstack;      // 内核栈顶指针,位置在结构体的最低端，但是指向PCB的最高端的栈
+    pid_t pid;
     enum task_status status;       // 状态 
     char name[16];          //进程/线程的名字
     uint8_t priority;           // 优先级
