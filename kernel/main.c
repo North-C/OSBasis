@@ -10,6 +10,7 @@
 #include "../userprog/process.h"
 #include "list.h"
 #include "../userprog/syscall_init.h"
+#include "../lib/user/syscall.h"
 
 // typedef void(*ptr_to_func)(int);  ptr_to_func signal(int, ptr_to_func);
 void k_thread_a(void* arg);
@@ -65,6 +66,7 @@ void  k_thread_a(void* arg){
     //     console_put_str("v_a:0x");
     //     console_put_int(test_var_a);
     // }
+   // sleep(10);
     char* para = arg;
     console_put_str(" thread_a_pid: 0x");
     console_put_int(sys_getpid());
@@ -97,7 +99,7 @@ void  k_thread_b(void* arg){
 }
 
 void u_thread_a(void){
-    prog_a_pid = sys_getpid();     
+    prog_a_pid = getpid();     
     while(1);
     // while(1){
     //     test_var_a++;
@@ -105,7 +107,7 @@ void u_thread_a(void){
 }
 
 void u_thread_b(void){
-    prog_b_pid = sys_getpid();    
+    prog_b_pid = getpid();    
     while(1);
     // while(1){
     //     test_var_b++;

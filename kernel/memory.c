@@ -46,10 +46,14 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt){
         }
     }
     else{       // 用户内存池, 进程保存有各自的用户虚拟地址池
-        struct task_struct* cur = running_thread(); 
-        bit_idx_start = bitmap_scan(&cur->userprog_vaddr.vaddr_bitmap, pg_cnt);
+        struct task_struct* cur = running_thread();         
+        bit_idx_start = bitmap_scan(&cur->userprog_vaddr.vaddr_bitmap, pg_cnt); // 获取可用的虚拟内存起始地址
         if(bit_idx_start == -1){
             return NULL;
+        }
+
+        while(cnt < pg_cnt){        
+            bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx_start + (cnt++), 1);
         }
         vaddr_start = cur->userprog_vaddr.vaddr_start + bit_idx_start * PG_SIZE ;
         
@@ -91,7 +95,7 @@ static void page_table_add(void* _vaddr, void* _page_phyaddr){
     uint32_t phyaddr = (uint32_t) _page_phyaddr;
     // 在页表当中完成映射，本质上是添加页表项PTE
 
-    // 第一步，找到页表,先确认PDE创建完毕,没有则需要先创建PDE
+    // 第一步，找到页表,先确认PDE创建完毕,没有则需要先创建PDE（否则会出现page fault）
     // 第二步，构建和安装PTE
     uint32_t* pde = pde_ptr(vaddr);      
     uint32_t* pte = pte_ptr(vaddr);
@@ -102,19 +106,20 @@ static void page_table_add(void* _vaddr, void* _page_phyaddr){
         if( !(*pte & 0x00000001)){      // 没有，则创建页表
             *pte = (phyaddr | PG_US_U | PG_RW_W | PG_P_1);   // 页表项
         }else{      // 如果存在
-            PANIC("pte repeat");
-            *pte = (phyaddr | PG_US_U | PG_RW_W | PG_P_1);   // 页表项
+            PANIC("pte repeat");        // 已经存在，警告
+            //  *pte = (phyaddr | PG_US_U | PG_RW_W | PG_P_1); 
         }
     }else{      // 页目录表项不存在
         // 分配PDE指向的页表的空间
         uint32_t pde_phyaddr = (uint32_t)palloc(&kernel_pool);
         // 先创建PDE
         *pde = (pde_phyaddr | PG_US_U | PG_RW_W | PG_P_1);
-        // 将页表对应的物理页的内容清零, 取得地址为 pte指向物理页的地址
+        // 将页表 pde_phyaddr 对应的物理页的内容清零, 避免被旧数据扰乱
+        // 将pte的高20位映射到pde所指向页表的物理起始地址
         memset((void*)((int)pte & 0xfffff000), 0, PG_SIZE);
         // 设置PTE
-        ASSERT(!(*pte & 0x00000001));       // 判断是否存在
-        *pte = (phyaddr | PG_US_U | PG_RW_W | PG_P_1);
+        ASSERT(!(*pte & 0x00000001));       // 不应该存在,应该 P=0才对
+        *pte = (phyaddr | PG_US_U | PG_RW_W | PG_P_1); 
     }
 }
 

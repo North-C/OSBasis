@@ -14,6 +14,7 @@
 
 #define EFLAGS_IF 0x00000200        // 设置IF
 #define GET_EFLAGS(EFLAGS_VAR) asm volatile("pushfl; popl %0;": "=g" (EFLAGS_VAR))    // 通过栈输出到EFLAGS_VAR
+extern uint32_t syscall_handler(void);      // 系统调用处理函数
 
 // 中断描述符的结构体
 struct gate_desc{
@@ -143,14 +144,13 @@ static void exception_init(void){
     intr_name[18] = "#MC Machine-Check Exception";
     intr_name[19] = "#XF SIMD Floating-Point Exception";
 
-   // intr_name[0x80] = "#CALL System call--- getpid";
 }
 /* 打开中断，返回开中断之前的状态 */
 enum intr_status enable_intr(void){
     enum intr_status old_status;
     old_status = get_intr_status();
     if(old_status == INT_OFF){
-        asm volatile("sti": :);
+        asm volatile("sti");    // 打开中断
     }
     return old_status;
 }
@@ -160,14 +160,14 @@ enum intr_status disable_intr(void){
     enum intr_status old_status;
     old_status = get_intr_status();
     if(old_status == INT_ON){
-        asm volatile("cli": : :"memory");
+        asm volatile("cli": : :"memory");       // 关闭中断
     }
     return old_status;
 }
 
 /* 获取当前的中断状态 */
 enum intr_status get_intr_status(void){
-    uint32_t eflags;
+    uint32_t eflags = 0;    // 初始化
     GET_EFLAGS(eflags);
      return eflags & EFLAGS_IF ? INT_ON : INT_OFF;
 }

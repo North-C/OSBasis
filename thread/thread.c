@@ -19,7 +19,7 @@ struct list thread_ready_list;      // 线程就绪队列
 struct list thread_all_list;        // 所有任务队列
 static struct list_elem* thread_tag;    // 队列当中的线程节点
 
-static struct lock pid_lock;       // 进程pid的锁
+struct lock pid_lock;       // 进程pid的锁
 
 static pid_t allocate_pid(){
     static pid_t next_pid = 0;
@@ -130,7 +130,7 @@ void init_thread(struct task_struct* pthread, char* name, int priority){
         pthread->status = TASK_READY;
     }
 
-    pthread->ticks = 0;
+    pthread->ticks = priority;
     pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;
     // self_kstack是栈顶地址,PCB占据1页的大小，设置到最高处。

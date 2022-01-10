@@ -9,8 +9,7 @@
 typedef void* syscall;     // 指针，指向函数入口
 syscall syscall_table[syscall_nr];
 
-
-uint32_t sys_getpid(){  // 为什么返回的是uint32_t ，而不是int16_t????
+uint32_t sys_getpid(void){  // 为什么返回的是uint32_t ，而不是int16_t????
     return running_thread()->pid;
 }
 

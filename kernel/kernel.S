@@ -108,6 +108,8 @@ extern syscall_table
 section .text
 global syscall_handler
 syscall_handler:
+    push 0          ; 占据错误码的位置，不能落下
+
     push ds     ; 保护所有寄存器映像
     push es
     push fs

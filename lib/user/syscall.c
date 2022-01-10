@@ -12,7 +12,7 @@
     : "a"(NUMBER)           \
     : "memory"              \
     );            \
-    res;                    \
+    res;        \
 })
 
 #define _syscall1(NUMBER, ARG1) ({    \
