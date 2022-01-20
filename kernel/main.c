@@ -29,12 +29,14 @@ int main(void){
     // void *addr = get_kernel_pages(3);
     // put_str("\n get_kernel_page start vaddr is ");
     // put_int((uint32_t) addr);
-    // put_str("\n"); 
+    // put_str("\n");
 
     // 具体的取值和调度、阻塞的时机相关
     process_execute(u_thread_a, "user_prog_a");
     process_execute(u_thread_b, "user_prog_b");
 
+    console_put_str(" after process_execute");
+    
     enable_intr();      // 打开中断
     console_put_str(" main_pid: 0x");
     console_put_int(sys_getpid());

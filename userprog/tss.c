@@ -20,7 +20,7 @@ struct tss{
     uint32_t* esp2;
     uint32_t ss2;
     uint32_t cr3;
-    uint32_t (*eip)(void*);           // eip指向需要执行的指令
+    uint32_t (*eip)(void);           // eip指向需要执行的指令
     uint32_t eflags;
     uint32_t eax;
     uint32_t ecx;
@@ -58,7 +58,7 @@ static struct gdt_desc make_gdt_desc(uint32_t* desc_addr, uint32_t limit, uint8_
     desc.mid_base_byte = ((desc_base &0x00ff0000)>>16);
     desc.low_attr_byte = (uint8_t)attr_low;
     desc.limit_high_attr_byte = (((limit & 0x000f0000) >> 16) + (uint8_t)attr_high);
-    desc.high_base_byte = ((desc_base & 0xff000000)>>24);
+    desc.high_base_byte = (desc_base>>24);
     return desc;
 }
 
@@ -77,10 +77,10 @@ void tss_init(){
     *((struct gdt_desc*)0xc0000920) = make_gdt_desc((uint32_t*)&tss, tss_size - 1, TSS_ATTR_HIGH, TSS_ATTR_LOW);
     
     // 用户代码段描述符
-    *((struct gdt_desc*)0xc0000928) = make_gdt_desc((uint32_t*)0, (uint32_t) 0xfffff, GDT_ATTR_HIGH, GDT_ATTR_LOW_CODE_DPL3);
+    *((struct gdt_desc*)0xc0000928) = make_gdt_desc((uint32_t*)0, 0xfffff, GDT_ATTR_HIGH, GDT_ATTR_LOW_CODE_DPL3);
     
     // 用户数据段描述符
-    *((struct gdt_desc*)0xc0000930) = make_gdt_desc((uint32_t*)0, (uint32_t) 0xfffff, GDT_ATTR_HIGH, GDT_ATTR_LOW_DATA_DPL3);
+    *((struct gdt_desc*)0xc0000930) = make_gdt_desc((uint32_t*)0, 0xfffff, GDT_ATTR_HIGH, GDT_ATTR_LOW_DATA_DPL3);
     
     // gdt的32位基地址 和 16位limit
     uint64_t gdt_operand = ( ((uint64_t)(uint32_t)0xc0000900 << 16) | (8 * 7-1));
