@@ -51,6 +51,9 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt){
         if(bit_idx_start == -1){
             return NULL;
         }
+        while(cnt < pg_cnt){
+            bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 1);
+        }
         vaddr_start = cur->userprog_vaddr.vaddr_start + bit_idx_start * PG_SIZE ;
         
         // 注意这里, 用户进程的3特权级栈 (0xc0000000 - PG_SIZE)已经被start_process分配了
@@ -162,6 +165,8 @@ void* get_user_pages(uint32_t pg_cnt){
     void* vaddr_start = malloc_page(PF_USER, pg_cnt);
     if(vaddr_start != NULL){
         memset(vaddr_start, 0, pg_cnt * PG_SIZE);
+    }else{
+        PANIC("malloc_user_page error");
     }
     lock_release(&user_pool.lock);
     return vaddr_start;

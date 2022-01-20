@@ -42,7 +42,7 @@ void page_dir_activate(struct task_struct* p_thread){
         pagedir_phy_addr = addr_v2p((uint32_t)p_thread->pgdir);     // 这里需要获取的是用户进程的页目录表基地址,从void*转换为uint32_t
     }
     // 加载页目录表基地址
-    asm volatile("mov %0, %%cr3": :"r"(pagedir_phy_addr): "memory");
+    asm volatile("movl %0, %%cr3": :"r"(pagedir_phy_addr): "memory");
 }
 
 /* 激活线程或进程的页表,更新tss中的esp0为进程的0特权级栈 */
@@ -52,7 +52,7 @@ void process_activate(struct task_struct* p_thread){
     
     page_dir_activate(p_thread);
     /* 更新栈 */
-    if(p_thread->pgdir != NULL){    // 内核线程不需要更改
+    if(p_thread->pgdir){    // 内核线程不需要更改
         update_tss_esp(p_thread);
     }
 }
@@ -74,6 +74,11 @@ uint32_t* create_page_dir(void){
     /** 2. 更新页目录地址 **/
     uint32_t new_phy_addr = addr_v2p((uint32_t)page_dir_vaddr);       
     page_dir_vaddr[1023] = new_phy_addr | PG_US_U | PG_RW_W | PG_P_1;    // 页目录地址保存在最后一项
+    
+    console_put_str("\ncreate_page_dir ");
+    console_put_int(new_phy_addr);
+    console_put_char('\n');
+
     return page_dir_vaddr;
 }
 
@@ -99,6 +104,11 @@ void process_execute(void* filename, char* name){
 
     thread_create(thread, start_process, filename);        // 将self_kstack放到栈的栈顶，地址最低端
     thread->pgdir = create_page_dir();    
+
+    console_put_str(" thread name is ");
+    console_put_str(thread->name);
+    console_put_str(" thread pagedir is ");
+    console_put_int(thread->pgdir);
 
     enum intr_status old = disable_intr();  //关闭中断
 

@@ -66,14 +66,19 @@ void schedule(void){
         // 另一种情况就是被阻塞，这时不需要处理就绪队列，因为不处于就绪状态，不在该队列上
 
     }
-    // 选一个任务来执行 
+    // 选一个任务来执行
     ASSERT(!list_empty(&thread_ready_list));       
     thread_tag = NULL;      // thread_tag 清空 
     thread_tag = list_pop(&thread_ready_list);  
     struct task_struct* task = elem2entry(thread_tag, struct task_struct, general_tag); // 由标记获取到 任务节点 
+    
+    // put_str("\nnext task is ");
+    // put_str(task->name);
+    // put_char('\n');
+    
     task->status = TASK_RUNNING;    
     process_activate(task);         // 激活页表等 
-    switch_to(cur_thread, task); 
+    switch_to(cur_thread, task);    // 切换任务
 }
 
 /* 获取当前正在运行线程的PCB指针 */
@@ -104,26 +109,25 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
     kthread->function = function;       
     kthread->func_arg = func_arg;
     kthread->ebp = kthread->ebx = kthread->edi = kthread->esi = 0;      // 将这几个寄存器初始化为0
-    
 }
 
 /* 初始化线程PCB的名字name和优先级priority */
 void init_thread(struct task_struct* pthread, char* name, int priority){
     memset( pthread ,0, sizeof(*pthread));       // 逐字节清零, 计算的是 *pthread 结构体的大小
     strcpy(pthread->name, name);        // 复制名字
-    pthread->priority = priority;
+    
 
     if(pthread == main_thread){     // 依据是否是主线程来进行判断
         pthread->status = TASK_RUNNING;
     }else{
         pthread->status = TASK_READY;
     }
-
-    pthread->ticks = 0;
+ // self_kstack是栈顶地址,PCB占据1页的大小，设置到最高处。
+    pthread->self_kstack = (uint32_t*)((uint32_t)pthread + PG_SIZE);    // pthread地址做一下uint32_t类型转换
+    pthread->priority = priority;
+    pthread->ticks = priority;
     pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;
-    // self_kstack是栈顶地址,PCB占据1页的大小，设置到最高处。
-    pthread->self_kstack = (uint32_t*)((uint32_t)pthread + PG_SIZE);    // pthread地址做一下uint32_t类型转换
     pthread->stack_magic = 0x19870916;      // 自定义的魔数
 }
 
@@ -148,6 +152,9 @@ struct task_struct* thread_start(char* name, int priority, thread_func function,
 
 /* 将kernel当中的main函数完善为主线程 */
 static void make_main_thread(void){
+    // main线程已经在运行中,
+    // loader.S 当中已经设置mov, esp, 0xc009f000，
+    // 因此main线程pcb的位置为 0xc009e000，不需要再多分配一页
     main_thread = running_thread();
 
     init_thread(main_thread, "main_thread", 31);

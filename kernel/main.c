@@ -27,15 +27,18 @@ int main(void){
     // void *addr = get_kernel_pages(3);
     // put_str("\n get_kernel_page start vaddr is ");
     // put_int((uint32_t) addr);
-    // put_str("\n"); 
+    // put_str("\n");
 
-    thread_start("consumer_a", 31, k_thread_a, "argA_");
-    thread_start("consumer_b", 31, k_thread_b, "argB_");
+    thread_start("k_thread_a", 31, k_thread_a, "argA_");
+    thread_start("k_thread_b", 31, k_thread_b, "argB_");
 
     process_execute(u_thread_a, "user_prog_a");
     process_execute(u_thread_b, "user_prog_b");
 
+    console_put_str(" after process_execute");
+    
     enable_intr();      // 打开中断
+    console_put_str("after enable_intr");
     while(1); //{
   //      console_put_str("Main ");
         // print_thread_list();
@@ -56,10 +59,11 @@ void  k_thread_a(void* arg){
     //     }
     //     set_intr_status(old);
     // }
-
+    char* para = arg;
     while(1){
         console_put_str("v_a:0x");
         console_put_int(test_var_a);
+        // put_str(para);
     }
 }
 
@@ -75,21 +79,25 @@ void  k_thread_b(void* arg){
     //     }
     //     set_intr_status(old);
     // }
+    char* para = arg;
     while(1){
         console_put_str(" v_b:0x");
         console_put_int(test_var_b);
+        //put_str(para);
     }
 }
 
 void u_thread_a(void){
     while(1){
         test_var_a++;
+        //console_put_str("var_a++\n");
     }
 }
 
 void u_thread_b(void){
     while(1){
         test_var_b++;
+        //console_put_str("var_b++\n");
     }
 }
 

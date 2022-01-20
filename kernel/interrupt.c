@@ -55,7 +55,7 @@ static void pic_init(void){
     outb(PIC_S_DATA, 0x01);
 
     // 打开主片上的IR0,即只接受时钟中断 0xfe
-    outb(PIC_M_DATA, 0xfc);     // 测试键盘，只打开键盘中断，其他全部关闭 0xfd ; 打开时钟和键盘中断 0xfc
+    outb(PIC_M_DATA, 0xfe);     // 测试键盘，只打开键盘中断，其他全部关闭 0xfd ; 打开时钟和键盘中断 0xfc
     outb(PIC_S_DATA, 0xff);
 
     put_str("  pic_init done\n");
@@ -93,6 +93,7 @@ static void general_intr_handler(uint8_t vec_nr){
     set_cursor(0);  // 将光标重置到屏幕最左上角
     put_str("!!!!! execution message  start !!!!!\n");
     set_cursor(88);
+    put_str("!!!!! ");
     put_str(intr_name[vec_nr]);
     if(vec_nr == 14){       // 如果是缺页中断Page fault
         int page_fault_vaddr = 0;
@@ -138,24 +139,31 @@ static void exception_init(void){
     intr_name[18] = "#MC Machine-Check Exception";
     intr_name[19] = "#XF SIMD Floating-Point Exception";
 }
+
 /* 打开中断，返回开中断之前的状态 */
 enum intr_status enable_intr(void){
     enum intr_status old_status;
-    old_status = get_intr_status();
-    if(old_status == INT_OFF){
-        asm volatile("sti": :);
+    if(INT_ON == get_intr_status()){
+        old_status = INT_ON;
+        return old_status;
+    }else{
+        old_status = INT_OFF;
+        asm volatile("sti");
+        return old_status;
     }
-    return old_status;
 }
 
 /* 关闭中断，返回关闭以前的状态 */
 enum intr_status disable_intr(void){
     enum intr_status old_status;
-    old_status = get_intr_status();
-    if(old_status == INT_ON){
+    if(INT_ON == get_intr_status()){
+        old_status = INT_ON;
         asm volatile("cli": : :"memory");
+        return old_status;
+    }else{
+        old_status = INT_OFF;
+        return old_status;
     }
-    return old_status;
 }
 
 /* 获取当前的中断状态 */

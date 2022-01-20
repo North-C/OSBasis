@@ -79,7 +79,7 @@ struct gdt_desc{
 
 // ---------------------- EFLAGS -------------------------------
 #define EFLAGS_MBS  (1 << 1)
-#define EFLAGS_IF_1     (1 << 9)
+#define EFLAGS_IF_1     (1 << 9)       
 #define EFLAGS_IF_0     0
 #define EFLAGS_IOPL_3   (3 << 12)
 
@@ -87,7 +87,7 @@ struct gdt_desc{
 
 #define NULL  ((void*)0)
 #define bool int
-#define DIV_ROUND_UP(X, STEP)   ((X + STEP +1) /STEP)   // 向上整除
+#define DIV_ROUND_UP(X, STEP)   ((X + STEP - 1) / (STEP))   // 向上整除
 #define true 1
 #define false 0
 

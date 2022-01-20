@@ -76,6 +76,8 @@ struct task_struct{
     struct virtual_addr userprog_vaddr;     //用户进程的虚拟地址
     uint32_t stack_magic;       // 魔数设计为0x19870916，栈的边界标记，用于检测栈的溢出。中断处理时可以检测是否PCB被初始化
 };
+extern struct list thread_ready_list;
+extern struct list thread_all_list;
 
 void thread_create(struct task_struct* pthread, thread_func function, void* func_arg);
 void init_thread(struct task_struct* pthread, char* name, int priority);

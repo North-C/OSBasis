@@ -5,7 +5,7 @@ switch_to:
 
     push esi
     push edi
-    push edx
+    push ebx
     push ebp
 
     ; 备份当前线程的环境
@@ -17,7 +17,7 @@ switch_to:
     mov esp, [eax]      ; 换上下一个pcb的kernel_kstack成员
 
     pop ebp
-    pop edx
+    pop ebx
     pop edi
     pop esi
     ret     
