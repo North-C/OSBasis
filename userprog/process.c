@@ -75,9 +75,9 @@ uint32_t* create_page_dir(void){
     uint32_t new_phy_addr = addr_v2p((uint32_t)page_dir_vaddr);       
     page_dir_vaddr[1023] = new_phy_addr | PG_US_U | PG_RW_W | PG_P_1;    // 页目录地址保存在最后一项
     
-    console_put_str("\ncreate_page_dir ");
-    console_put_int(new_phy_addr);
-    console_put_char('\n');
+    // console_put_str("\ncreate_page_dir ");
+    // console_put_int(new_phy_addr);
+    // console_put_char('\n');
 
     return page_dir_vaddr;
 }
@@ -106,10 +106,10 @@ void process_execute(void* filename, char* name){
     thread_create(thread, start_process, filename);        // 将self_kstack放到栈的栈顶，地址最低端
     thread->pgdir = create_page_dir();      // 页表配置
 
-    console_put_str(" thread name is ");
-    console_put_str(thread->name);
-    console_put_str(" thread pagedir is ");
-    console_put_int(thread->pgdir);
+    // console_put_str(" thread name is ");
+    // console_put_str(thread->name);
+    // console_put_str(" thread pagedir is ");
+    // console_put_int(thread->pgdir);
 
     enum intr_status old = disable_intr();  //关闭中断
 

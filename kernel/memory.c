@@ -51,14 +51,9 @@ static void* vaddr_get(enum pool_flags pf, uint32_t pg_cnt){
         if(bit_idx_start == -1){
             return NULL;
         }
-<<<<<<< HEAD
 
         while(cnt < pg_cnt){        
             bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx_start + (cnt++), 1);
-=======
-        while(cnt < pg_cnt){
-            bitmap_set(&cur->userprog_vaddr.vaddr_bitmap, bit_idx_start + cnt++, 1);
->>>>>>> repair
         }
         vaddr_start = cur->userprog_vaddr.vaddr_start + bit_idx_start * PG_SIZE ;
         

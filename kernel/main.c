@@ -35,7 +35,7 @@ int main(void){
     process_execute(u_thread_a, "user_prog_a");
     process_execute(u_thread_b, "user_prog_b");
 
-    console_put_str(" after process_execute");
+    // console_put_str(" after process_execute");
     
     enable_intr();      // 打开中断
     console_put_str(" main_pid: 0x");
