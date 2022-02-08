@@ -13,13 +13,14 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
       $(BUILD_DIR)/string.o  $(BUILD_DIR)/thread.o $(BUILD_DIR)/list.o \
 	  $(BUILD_DIR)/switch.o  $(BUILD_DIR)/sync.o $(BUILD_DIR)/console.o \
 	  $(BUILD_DIR)/keyboard.o $(BUILD_DIR)/ioqueue.o $(BUILD_DIR)/tss.o \
-	  $(BUILD_DIR)/process.o $(BUILD_DIR)/syscall_init.o  $(BUILD_DIR)/syscall.o
+	  $(BUILD_DIR)/process.o $(BUILD_DIR)/syscall_init.o  $(BUILD_DIR)/syscall.o \
+	  $(BUILD_DIR)/stdio.o
 # $< 依赖文件当中的第一个文件
 # $@ 规则中的目标文件名集合，所有目标文件
 ############################### C代码编译 ######################
 $(BUILD_DIR)/main.o: kernel/main.c lib/kernel/print.h \
       lib/stdint.h kernel/init.h  device/ioqueue.h userprog/process.h \
-	  lib/user/syscall.h
+	  lib/user/syscall.h kernel/memory.h lib/stdio.h
 	$(CC) $(CFLAGS) $< -o $@          
 
 $(BUILD_DIR)/init.o: kernel/init.c kernel/init.h lib/kernel/print.h \
@@ -59,11 +60,11 @@ $(BUILD_DIR)/thread.o: thread/thread.c thread/thread.h lib/stdint.h \
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/list.o: lib/kernel/list.c lib/kernel/list.h kernel/interrupt.h  lib/stdint.h kernel/global.h \
-		lib/kernel/io.h lib/kernel/print.h thread/thread.h
+		lib/kernel/io.h lib/kernel/print.h thread/thread.h kernel/memory.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/sync.o: thread/sync.c thread/sync.h kernel/interrupt.h  lib/stdint.h kernel/global.h \
-		lib/kernel/io.h lib/kernel/print.h thread/thread.h kernel/debug.h
+		lib/kernel/io.h lib/kernel/print.h thread/thread.h kernel/debug.h kernel/memory.h 
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/console.o: device/console.c device/console.h kernel/interrupt.h  lib/stdint.h kernel/global.h \
@@ -71,11 +72,11 @@ $(BUILD_DIR)/console.o: device/console.c device/console.h kernel/interrupt.h  li
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/keyboard.o: device/keyboard.c device/keyboard.h kernel/interrupt.h lib/kernel/io.h lib/kernel/print.h \
-		kernel/global.h kernel/debug.h thread/thread.h thread/sync.h kernel/global.h
+		kernel/global.h kernel/debug.h thread/thread.h thread/sync.h kernel/global.h kernel/memory.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/ioqueue.o: device/ioqueue.c device/ioqueue.h kernel/interrupt.h lib/kernel/io.h lib/kernel/print.h \
-		kernel/global.h kernel/debug.h thread/thread.h thread/sync.h kernel/global.h lib/stdint.h
+		kernel/global.h kernel/debug.h thread/thread.h thread/sync.h kernel/global.h lib/stdint.h kernel/memory.h
 	$(CC) $(CFLAGS) $< -o $@
 
 $(BUILD_DIR)/tss.o: userprog/tss.c userprog/tss.h kernel/interrupt.h lib/kernel/io.h lib/kernel/print.h \
@@ -96,6 +97,10 @@ $(BUILD_DIR)/syscall.o: lib/user/syscall.c lib/user/syscall.h kernel/interrupt.h
 		kernel/global.h lib/stdint.h lib/string.h kernel/memory.h thread/thread.h device/console.h 	
 	$(CC) $(CFLAGS) $< -o $@
 
+$(BUILD_DIR)/stdio.o: lib/stdio.c lib/stdio.h kernel/interrupt.h lib/kernel/io.h lib/kernel/print.h \
+		kernel/global.h lib/stdint.h lib/string.h thread/thread.h \
+		lib/user/syscall.h
+	$(CC) $(CFLAGS) $< -o $@
 ######################### 汇编代码编译 #############################
 $(BUILD_DIR)/kernel.o: kernel/kernel.S
 	$(AS) $(ASFLAGS) $< -o $@

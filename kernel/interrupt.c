@@ -97,16 +97,16 @@ static void general_intr_handler(uint8_t vec_nr){
     }
     /* 优化一下输出 */
     set_cursor(0);  // 将光标重置到屏幕最左上角
-    put_str("!!!!! execution message  start !!!!!\n");
+    put_str("!!!!!            execution message  start        !!!!!\n");
     set_cursor(88);
     put_str("!!!!! ");
     put_str(intr_name[vec_nr]);
     if(vec_nr == 14){       // 如果是缺页中断Page fault
         int page_fault_vaddr = 0;
-        asm volatile("movl %%cr2, %0": "=r"(page_fault_vaddr));     // r eax/ebx/ecx/edx/edi/esi中的任意一个
+        asm ("movl %%cr2, %0": "=r"(page_fault_vaddr));     // r eax/ebx/ecx/edx/edi/esi中的任意一个
         put_str("\n\t page fault addr is "); put_int(page_fault_vaddr);
     }
-    put_str("\n!!!!  execution message end !!!!\n");
+    put_str("\n!!!!           execution message end       !!!!\n");
     while(1);
     /* // 实际的处理也只是输出一下中断向量号
     put_str("int vector: 0x");  
@@ -177,12 +177,12 @@ enum intr_status disable_intr(void){
 enum intr_status get_intr_status(void){
     uint32_t eflags = 0;    // 初始化
     GET_EFLAGS(eflags);
-     return eflags & EFLAGS_IF ? INT_ON : INT_OFF;
+     return (eflags & EFLAGS_IF) ? INT_ON : INT_OFF;
 }
 
 /* 依据status来打开或者关闭中断，返回原来的中断状态 */
 enum intr_status set_intr_status(enum intr_status status){
-    return status & INT_ON ? enable_intr() : disable_intr();
+    return (status & INT_ON) ? enable_intr() : disable_intr();
 }
 
 /* 完成所有中断的初始化和加载工作 */

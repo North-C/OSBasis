@@ -21,7 +21,7 @@ static struct list_elem* thread_tag;    // 队列当中的线程节点
 
 struct lock pid_lock;       // 进程pid的锁
 
-static pid_t allocate_pid(){
+static pid_t allocate_pid(void){
     static pid_t next_pid = 0;
     lock_acquire(&pid_lock);
     next_pid++;
@@ -44,7 +44,7 @@ void thread_block(enum task_status stat){
 // 将线程pthread唤醒
 void thread_unblock(struct task_struct* pthread){
     enum intr_status old_status = disable_intr();
-
+    
     // 判断是否需要唤醒
     ASSERT(((pthread->status == TASK_HANGING) || (pthread->status == TASK_BLOCKED) || (pthread->status == TASK_WAITING)));
     if(pthread->status != TASK_READY ){
@@ -125,8 +125,8 @@ void thread_create(struct task_struct* pthread, thread_func function, void* func
 /* 初始化线程PCB的名字name和优先级priority */
 void init_thread(struct task_struct* pthread, char* name, int priority){
     memset( pthread ,0, sizeof(*pthread));       // 逐字节清零, 计算的是 *pthread 结构体的大小
+    pthread->pid = allocate_pid();      
     strcpy(pthread->name, name);        // 复制名字
-    
 
     if(pthread == main_thread){     // 依据是否是主线程来进行判断
         pthread->status = TASK_RUNNING;
@@ -134,13 +134,12 @@ void init_thread(struct task_struct* pthread, char* name, int priority){
         pthread->status = TASK_READY;
     }
 
-    pthread->pid = allocate_pid();
-    // self_kstack是栈顶地址,PCB占据1页的大小，设置到最高处。
     pthread->self_kstack = (uint32_t*)((uint32_t)pthread + PG_SIZE);    // pthread地址做一下uint32_t类型转换
     pthread->priority = priority;
     pthread->ticks = priority;
     pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;
+    // self_kstack是栈顶地址,PCB占据1页的大小，设置到最高处。
     pthread->stack_magic = 0x19870916;      // 自定义的魔数
 }
 

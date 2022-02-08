@@ -32,6 +32,10 @@ static void frequency_set(uint8_t counter_port, uint8_t counter_no, uint8_t rwl,
 /* 时钟中断处理函数 */
 static void intr_timer_handler(void){
     struct task_struct* cur_thread = running_thread();
+    
+    // put_str("cur_therad's name is: ");
+    // put_str(cur_thread->name);
+    // put_char('\n');
 
     ASSERT(cur_thread->stack_magic == 0x19870916);
 

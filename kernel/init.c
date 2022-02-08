@@ -5,7 +5,6 @@
 #include "thread.h"
 #include "keyboard.h"
 #include "console.h"
-#include "memory.h"
 #include "../userprog/tss.h"
 #include "../userprog/syscall_init.h"
 

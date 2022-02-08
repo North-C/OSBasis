@@ -17,7 +17,7 @@ extern struct list thread_all_list;        // 所有任务队列
 void start_process(void* filename_){
     void* function = filename_;  
     struct task_struct* cur = running_thread();
-    cur->self_kstack += sizeof(struct thread_stack) ;   // 越过thread_stack
+    cur->self_kstack += sizeof(struct thread_stack) ;   // 越过thread_stack, thread_stack保存上下文
 
     struct intr_stack* proc_stack = (struct intr_stack*)cur->self_kstack;   // 中断栈,在intr_exit时踏出用户进程上下文
     proc_stack->edi = proc_stack->esi = proc_stack->ebp = proc_stack->esp_dummy = 0;
@@ -28,7 +28,7 @@ void start_process(void* filename_){
     proc_stack->eip = function;     //等待执行的用户程序地址
     proc_stack->cs = SELECTOR_U_CODE;
     proc_stack->eflags = (EFLAGS_IOPL_0 | EFLAGS_MBS | EFLAGS_IF_1 );
-    proc_stack->esp = (void*)((uint32_t)get_a_page(PF_USER, USER_STACK3_VADDR) + PG_SIZE);
+    proc_stack->esp = (void*)((uint32_t)get_a_page(PF_USER, USER_STACK3_VADDR) + PG_SIZE);      // 用户的3特权级栈，获取栈的下边界（栈顶地址） + 栈大小 = 栈底地址
     proc_stack->ss = SELECTOR_U_STACK;
     asm volatile("movl %0, %%esp; jmp intr_exit": :"g"(proc_stack): "memory");
 }
@@ -41,7 +41,7 @@ void page_dir_activate(struct task_struct* p_thread){
     if(p_thread->pgdir !=NULL ){    // 线程没有初始化页表
         pagedir_phy_addr = addr_v2p((uint32_t)p_thread->pgdir);     // 这里需要获取的是用户进程的页目录表基地址,从void*转换为uint32_t
     }
-    // 加载页目录表基地址
+    // 加载页目录表基地址,使得新页表生效
     asm volatile("movl %0, %%cr3": :"r"(pagedir_phy_addr): "memory");
 }
 
@@ -68,6 +68,7 @@ uint32_t* create_page_dir(void){
         return NULL;
     }
 
+    /* 让用户空间的高1G页表都指向 对应的内核空间页表 */
     /** 1. 先复制页表 将内核表项复制到用户页目录表第768项之后 **/       
     memcpy( (uint32_t*)((uint32_t)page_dir_vaddr + 0x300*4), (uint32_t*)(0xfffff000 + 0x300*4), 1024);
 
@@ -98,13 +99,15 @@ void create_user_vaddr_bitmap(struct task_struct* user_prog){
 
 /* 创建用户进程 */
 void process_execute(void* filename, char* name){
-    struct task_struct* thread = get_kernel_pages(1);   // 内核PCB
+    struct task_struct* thread = get_kernel_pages(1);   // 内核PCB,在内核中维护，在内核中申请
     init_thread(thread, name, default_prio);        // 初始化线程
     create_user_vaddr_bitmap(thread);       // 分配用户虚拟地址空间
 
     // 将start_process作为执行函数
     thread_create(thread, start_process, filename);        // 将self_kstack放到栈的栈顶，地址最低端
     thread->pgdir = create_page_dir();      // 页表配置
+    
+    block_desc_init(thread->u_block_desc);          // 初始化内存分配描述符
 
     // console_put_str(" thread name is ");
     // console_put_str(thread->name);

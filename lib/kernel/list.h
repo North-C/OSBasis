@@ -15,8 +15,9 @@ struct list_elem{       // 没有存储，只需要链接PCB即可
 
 /* 自定义函数类型，用于list_traversal */
 typedef bool (function)(struct list_elem*, int arg);    // 先定义struct list_elem类型
+/* 常用链表类型 */
 struct list{
-    struct list_elem head;
+    struct list_elem head;      
     struct list_elem tail;
 };
 

@@ -3,6 +3,7 @@
 #include "thread.h"
 #include "debug.h"
 #include "global.h"
+#include "print.h"
 
 // 信号量初始化
 void sema_init(struct semaphore* sema, uint8_t value){
@@ -68,13 +69,14 @@ void lock_acquire(struct lock* plock){
 
 // 释放锁
 void lock_release(struct lock* plock){
-
     ASSERT(plock->holder == running_thread());
     // 参考holder_repeat_nr，来执行释放锁
     if(plock->holder_repeat_nr > 1){
         plock->holder_repeat_nr --;
         return ;
     }
+    ASSERT(plock->holder_repeat_nr == 1);   // 有持有者才能释放
+
     plock->holder = NULL;
     plock->holder_repeat_nr = 0;
     sema_up(&plock->sema);      // 需要放到最后一部分，释放后会进行线程的调度？
