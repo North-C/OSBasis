@@ -12,9 +12,9 @@ void bitmap_init(struct bitmap* btmp){
 
 /* 判断位图btmp中第bit_idx位是否为1 */
 bool bitmap_scan_test(struct bitmap* btmp, uint32_t bit_idx){
-    if(bit_idx < btmp->btmp_bytes_len){   // 防止溢出
-        return false;
-    }   
+    // if(bit_idx >= btmp->btmp_bytes_len){   // 防止溢出
+    //     return false;
+    // }   
     uint32_t byte_idx = bit_idx / 8;        // 索引数组下标
     uint32_t bit_odd = bit_idx % 8;     // 取余,用于索引数组内的位
 
@@ -31,13 +31,14 @@ int bitmap_scan(struct bitmap* btmp, uint32_t cnt){
     }
 
     ASSERT( free_byte_idx < btmp->btmp_bytes_len);
-    if(free_byte_idx >= btmp->btmp_bytes_len)
+    if(free_byte_idx >= btmp->btmp_bytes_len)       // 内存池中没有可用空间
         return -1;
 
-    // 判断有几个连续的空闲位
+    // 判断有几个连续的空闲位，字节中逐位比对
     int free_bit_in_byte = 0;   // 空闲位在字节当中的下标 
-    while( btmp->bits[free_byte_idx] & ((uint8_t)(BITMAP_MASK << free_bit_in_byte)))
+    while( btmp->bits[free_byte_idx] & ((uint8_t)(BITMAP_MASK << free_bit_in_byte))){
         free_bit_in_byte++;
+    }
     
     // 空闲位在位图内的下标
     int free_bit_start = free_byte_idx * 8 + free_bit_in_byte;
@@ -72,7 +73,8 @@ void bitmap_set(struct bitmap* btmp, uint32_t bit_idx, int8_t value){
     ASSERT((value == 0) || (value == 1));
     uint32_t byte_idx = bit_idx / 8;        // 索引数组下标
     uint32_t bit_odd = bit_idx % 8;     // 索引字节内的下标
-
+/* 一般都会用个0x1这样的数对字节中的位操作,
+ * 将1任意移动后再取反,或者先取反再移位,可用来对位置0操作。*/
     if(value){
         btmp->bits[byte_idx] |= (BITMAP_MASK << bit_odd);
     }else{
