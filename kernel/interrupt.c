@@ -58,9 +58,9 @@ static void pic_init(void){
     outb(PIC_S_DATA, 0x02);
     outb(PIC_S_DATA, 0x01);
 
-    // 打开主片上的IR0,即只接受时钟中断 0xfe
-    outb(PIC_M_DATA, 0xfe);     // 测试键盘，只打开键盘中断，其他全部关闭 0xfd ; 打开时钟和键盘中断 0xfc
-    outb(PIC_S_DATA, 0xff);
+    // 打开主片上的IR0,即只接受时钟中断 0xfe， 打开IRQ2,允许响应从片的中断
+    outb(PIC_M_DATA, 0xf8);     // 测试键盘，只打开键盘中断，其他全部关闭 0xfd ; 打开时钟和键盘中断 0xfc
+    outb(PIC_S_DATA, 0xbf);         // 打开IRQ14，接受硬盘控制器的中断
 
     put_str("  pic_init done\n");
 }

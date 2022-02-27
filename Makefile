@@ -14,7 +14,7 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	  $(BUILD_DIR)/switch.o  $(BUILD_DIR)/sync.o $(BUILD_DIR)/console.o \
 	  $(BUILD_DIR)/keyboard.o $(BUILD_DIR)/ioqueue.o $(BUILD_DIR)/tss.o \
 	  $(BUILD_DIR)/process.o $(BUILD_DIR)/syscall_init.o  $(BUILD_DIR)/syscall.o \
-	  $(BUILD_DIR)/stdio.o
+	  $(BUILD_DIR)/stdio.o $(BUILD_DIR)/ide.o $(BUILD_DIR)/stdio-kernel.o
 # $< 依赖文件当中的第一个文件
 # $@ 规则中的目标文件名集合，所有目标文件
 ############################### C代码编译 ######################
@@ -100,6 +100,16 @@ $(BUILD_DIR)/syscall.o: lib/user/syscall.c lib/user/syscall.h kernel/interrupt.h
 $(BUILD_DIR)/stdio.o: lib/stdio.c lib/stdio.h kernel/interrupt.h lib/kernel/io.h lib/kernel/print.h \
 		kernel/global.h lib/stdint.h lib/string.h thread/thread.h \
 		lib/user/syscall.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/ide.o: device/ide.c device/ide.h lib/stdint.h thread/sync.h \
+    	lib/kernel/list.h kernel/global.h thread/thread.h lib/kernel/bitmap.h \
+     	kernel/memory.h lib/kernel/io.h lib/stdio.h lib/stdint.h lib/kernel/stdio-kernel.h \
+	kernel/interrupt.h kernel/debug.h device/console.h device/timer.h lib/string.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/stdio-kernel.o: lib/kernel/stdio-kernel.c lib/kernel/stdio-kernel.h lib/stdint.h \
+    	lib/kernel/print.h lib/stdio.h lib/stdint.h device/console.h kernel/global.h
 	$(CC) $(CFLAGS) $< -o $@
 ######################### 汇编代码编译 #############################
 $(BUILD_DIR)/kernel.o: kernel/kernel.S

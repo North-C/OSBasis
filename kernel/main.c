@@ -44,7 +44,7 @@ void  k_thread_a(void* arg){
    console_put_int((int)addr3);
    console_put_char('\n');
 
-   int cpu_delay = 10000000;
+   int cpu_delay = 10000;
    while(cpu_delay-- > 0);
    sys_free(addr1);
    sys_free(addr2);
@@ -64,7 +64,7 @@ void  k_thread_b(void* arg){
    console_put_int((int)addr3);
    console_put_char('\n');
 
-   int cpu_delay = 10000000;
+   int cpu_delay = 10000;
    while(cpu_delay-- > 0);
    sys_free(addr1);
    sys_free(addr2);
@@ -78,7 +78,7 @@ void u_thread_a(void){
    void* addr3 = malloc(254);
    printf(" prog_a malloc addr:0x%x,0x%x,0x%x\n", (int)addr1, (int)addr2, (int)addr3);
 
-   int cpu_delay = 100000;
+   int cpu_delay = 10000;
    while(cpu_delay-- > 0);
    free(addr1);
    free(addr2);
@@ -92,7 +92,7 @@ void u_thread_b(void){
    void* addr3 = malloc(254);
    printf(" prog_b malloc addr:0x%x,0x%x,0x%x\n", (int)addr1, (int)addr2, (int)addr3);
 
-   int cpu_delay = 100000;
+   int cpu_delay = 10000;
    while(cpu_delay-- > 0);
    free(addr1);
    free(addr2);

@@ -7,6 +7,7 @@
 #include "console.h"
 #include "../userprog/tss.h"
 #include "../userprog/syscall_init.h"
+#include "ide.h"
 
 void init_all(){
     put_str("init all\n");
@@ -18,4 +19,6 @@ void init_all(){
     keyboard_init();
     tss_init();     // tss初始化
     syscall_init();     // 系统调用初始化
+    enable_intr();      // 打开中断，便于硬盘操作
+    ide_init();     // 初始化硬盘
 }

@@ -10,9 +10,9 @@
 #include "../userprog/process.h"
 #include "syscall.h"
 #include "sync.h"
+#include "list.h"
 
 #define PG_SIZE 4096
-
 
 struct task_struct* main_thread;    // 主线程PCB
 struct list thread_ready_list;      // 线程就绪队列
@@ -20,6 +20,31 @@ struct list thread_all_list;        // 所有任务队列
 static struct list_elem* thread_tag;    // 队列当中的线程节点
 
 struct lock pid_lock;       // 进程pid的锁
+
+struct task_struct* idle_thread;        // idle 线程
+static void idle(void* arg UNUSED);
+
+
+/* 系统空闲时运行的线程 */
+static void idle(void* arg UNUSED){
+    while(1){
+        thread_block(TASK_BLOCKED);
+        // 开中断，才能hlt
+        asm volatile("sti; hlt": : : "memory");
+    }
+}
+
+/* 主动让出cpu给其他线程运行 */
+void thread_yield(void){
+    struct task_struct* cur = running_thread();
+    enum intr_status old_status = disable_intr();       // 关闭中断，保证原子操作
+    ASSERT(!list_search(&thread_ready_list, &cur->general_tag));
+    list_append(&thread_ready_list, &cur->general_tag);         // 加入就绪队列
+    cur->status = TASK_READY;       // 设置线程状态
+    schedule();             // 进行调度
+    set_intr_status(old_status);
+}
+
 
 static pid_t allocate_pid(void){
     static pid_t next_pid = 0;
@@ -78,15 +103,12 @@ void schedule(void){
 
     }
     // 选一个任务来执行
-    ASSERT(!list_empty(&thread_ready_list));       
+    if(list_empty(&thread_ready_list)){
+        thread_unblock(idle_thread);
+    }
     thread_tag = NULL;      // thread_tag 清空 
     thread_tag = list_pop(&thread_ready_list);  
     struct task_struct* task = elem2entry(thread_tag, struct task_struct, general_tag); // 由标记获取到 任务节点 
-    
-    // put_str("\nnext task is ");
-    // put_str(task->name);
-    // put_char('\n');
-    
     task->status = TASK_RUNNING;    
     process_activate(task);         // 激活页表等 
     switch_to(cur_thread, task);    // 切换任务
@@ -182,6 +204,7 @@ void thread_init(){
     list_init(&thread_ready_list);
     lock_init(&pid_lock);
     make_main_thread();         // 生成主线程
+    idle_thread = thread_start("idle", 10, idle, NULL);
     put_str("thread_init done\n");
 }
 
