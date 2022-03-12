@@ -22,6 +22,7 @@ int main(void){
     put_str("I am kernel\n");
     init_all();
     // 具体的取值和调度、阻塞的时机相关
+    while(1);
     enable_intr();
     
     process_execute(u_thread_a, "user_prog_a");

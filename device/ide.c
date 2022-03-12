@@ -133,8 +133,8 @@ static void write2sector(struct disk* hd, void* buf, uint8_t sec_cnt){
 /* 等待硬盘30s,返回是否准备好 */
 static bool busy_wait(struct disk* hd){
     struct ide_channel* channel = hd->my_channel;
-    uint16_t time_limit = 30 * 1000;        // 毫秒为单位
-    while((time_limit -= 10) >= 0){
+    int16_t time_limit = 30 * 1000;        // 毫秒为单位
+    while(time_limit -= 10 >= 0){
         // 判断硬盘状态
         if( !(inb(reg_status(hd->my_channel)) & BIT_ALT_STAT_BSY )){
             // 硬盘驱动器是否准备好，是否能取数据
@@ -155,7 +155,7 @@ void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt){
     // 选取硬盘
     select_disk(hd);
 
-    uint8_t sec_every;     // 每此读取多少个扇区
+    uint32_t sec_every;     // 每此读取多少个扇区
     uint32_t sec_done = 0;
 
     while(sec_done < sec_cnt){
@@ -188,14 +188,14 @@ void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt){
 }
 
 void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt){
-ASSERT(sec_cnt > 0);    
     ASSERT(lba <= max_lba); 
+    ASSERT(sec_cnt > 0); 
     // 保持原子性
     lock_acquire(&hd->my_channel->lock);
     // 选取硬盘
     select_disk(hd);
 
-    uint8_t sec_every;     // 每此读取多少个扇区
+    uint32_t sec_every;     // 每此读取多少个扇区
     uint32_t sec_done = 0;
 
     while(sec_done < sec_cnt){
