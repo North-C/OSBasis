@@ -8,6 +8,65 @@
 #include "stdio-kernel.h"
 #include "string.h"
 #include "debug.h"
+
+
+
+struct partition* cur_partition;            // 默认情况下操作的分区
+
+/* 挂载分区，从分区链表找到part_name分区，并将指针赋值给cur_part */
+static bool mount_partition(struct list_elem* pelem, int arg){
+    char* part_name = (char*) arg;
+    struct partition* part = elem2entry(pelem, struct partition, part_tag);
+
+    if(!strcmp(part->name, part_name)){
+        cur_partition = part;
+        struct disk* hd = cur_partition->my_disk;
+
+/* sb_buf用来存储从硬盘上读入的超级块 */
+        struct super_block* sb_buf = (struct super_block*)sys_malloc(SECTOR_SIZE);
+        cur_partition->sb = (struct super_block*) sys_malloc(sizeof(struct super_block));
+        if(cur_partition->sb == NULL){
+            PANIC("alloc memory failed!");
+        }
+
+/* 读取超级块 */
+        memset(sb_buf, 0, SECTOR_SIZE);
+        ide_read(hd, cur_partition->start_lba+1, sb_buf, 1);
+
+        // 复制到当前分区的超级块
+        memcpy(cur_partition->sb, sb_buf, sizeof(struct super_block));
+
+
+/* 将硬盘上的块位图读入到内存 */
+        cur_partition->block_bitmap.bits = (uint8_t*) sys_malloc(sb_buf->block_bitmap_sects * SECTOR_SIZE);
+
+        if(cur_partition->block_bitmap.bits == NULL){
+            PANIC("alloc memory failed");
+        }
+        cur_partition->block_bitmap.btmp_bytes_len = sb_buf->block_bitmap_sects * SECTOR_SIZE;
+
+        // 从硬盘上读入块位图的分区的block_bitmap.bits
+        ide_read(hd, sb_buf->block_bitmap_lba, cur_partition->block_bitmap.bits, sb_buf->block_bitmap_sects);
+
+ /* 将硬盘上的inode位图读入到内存 */
+        cur_partition->inode_bitmap.bits = (uint8_t*)sys_malloc(sb_buf->inode_bitmap_sects * SECTOR_SIZE);
+
+        if(cur_partition->inode_bitmap.bits == NULL){
+            PANIC("alloc memory failed");
+        }
+        cur_partition->inode_bitmap.btmp_bytes_len = sb_buf->inode_bitmap_sects * SECTOR_SIZE;
+
+        // 从硬盘上读入inode位图到分区的inode_bitmap.bits
+        ide_read(hd, sb_buf->inode_bitmap_lba, cur_partition->inode_bitmap.bits, sb_buf->inode_bitmap_sects );
+
+        list_init(&cur_partition->open_inodes);
+        printk("mount %s done!\n", part->name);
+
+        return true;        // 迎合主调函数 list_traversal ，让其停止遍历
+    }
+    return false;
+}
+
 /* 格式化分区，即初始化分区的元信息，创建文件系统 */
 static void partition_format(struct partition* part){
     /* 1. blocks-bitmap_init */
@@ -169,4 +228,7 @@ void filesys_init(){
         channel_no++;       // 下一个通道   
     }
     sys_free(sb_buf);
+
+    char default_part[8] = "sdb1";
+    list_traversal(&partition_list, mount_partition, (int)default_part);
 }
