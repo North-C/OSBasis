@@ -3,6 +3,7 @@
 
 #include "stdint.h"
 #include "sync.h"
+#include "../fs/super_block.h"
 
 /* 分区 */
 struct partition{
@@ -24,7 +25,6 @@ struct disk{
     uint8_t dev_no;                    // 硬盘是主盘0，还是从盘1
     struct partition primary_partition[4];      // 主分区不超过4个
     struct partition logical_partition[8];      // 人为限制逻辑分区为8个
-    
 };
 
 /* ata通道结构 */

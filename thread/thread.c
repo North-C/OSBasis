@@ -162,6 +162,18 @@ void init_thread(struct task_struct* pthread, char* name, int priority){
     pthread->elapsed_ticks = 0;
     pthread->pgdir = NULL;
     // self_kstack是栈顶地址,PCB占据1页的大小，设置到最高处。
+
+// 预留标准输入输出和错误
+    pthread->fd_table[0] = 0;
+    pthread->fd_table[1] = 1;
+    pthread->fd_table[2] = 2;
+    
+    uint8_t fd_idx = 3;
+    while(fd_idx < MAX_FILES_OPEN_PER_PROC){
+        pthread->fd_table[fd_idx] = -1;         // 赋值为 -1
+        fd_idx++;
+    }
+
     pthread->stack_magic = 0x19870916;      // 自定义的魔数
 }
 

@@ -369,14 +369,15 @@ void* sys_malloc(uint32_t block_size){
         if(ar == NULL){
             lock_release(&mem_pool->lock);         // 释放锁
             return NULL;
+        }else{
+            // 进行初始化,对于分配的大块页框,将desc置为NULL, cnt置为页框数,large置为true
+            memset(ar, 0, PG_SIZE * pg_cnt);
+            ar->cnt = pg_cnt;       // 以页框为单位
+            ar->large = true;
+            ar->desc = NULL;        // 区别：大页的desc不设置
+            lock_release(&mem_pool->lock);
+            return (void*)(ar+1);           // 跨过arena的元信息，返回空闲内存块地址
         }
-        // 进行初始化,对于分配的大块页框,将desc置为NULL, cnt置为页框数,large置为true
-        memset(ar, 0, PG_SIZE * pg_cnt);
-        ar->cnt = pg_cnt;       // 以页框为单位
-        ar->large = true;
-        ar->desc = NULL;        // 区别：大页的desc不设置
-        lock_release(&mem_pool->lock);
-        return (void*)(ar+1);           // 跨过arena的元信息，返回空闲内存块地址
     }
     else{                   // 按照不同的内存块描述符
         uint32_t desc_idx ;

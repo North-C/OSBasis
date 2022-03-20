@@ -14,7 +14,8 @@ OBJS = $(BUILD_DIR)/main.o $(BUILD_DIR)/init.o $(BUILD_DIR)/interrupt.o \
 	  $(BUILD_DIR)/switch.o  $(BUILD_DIR)/sync.o $(BUILD_DIR)/console.o \
 	  $(BUILD_DIR)/keyboard.o $(BUILD_DIR)/ioqueue.o $(BUILD_DIR)/tss.o \
 	  $(BUILD_DIR)/process.o $(BUILD_DIR)/syscall_init.o  $(BUILD_DIR)/syscall.o \
-	  $(BUILD_DIR)/stdio.o $(BUILD_DIR)/ide.o $(BUILD_DIR)/stdio-kernel.o $(BUILD_DIR)/fs.o
+	  $(BUILD_DIR)/stdio.o $(BUILD_DIR)/ide.o $(BUILD_DIR)/stdio-kernel.o $(BUILD_DIR)/fs.o \
+	  $(BUILD_DIR)/inode.o $(BUILD_DIR)/file.o $(BUILD_DIR)/dir.o
 # $< 依赖文件当中的第一个文件
 # $@ 规则中的目标文件名集合，所有目标文件
 ############################### C代码编译 ######################
@@ -114,6 +115,24 @@ $(BUILD_DIR)/stdio-kernel.o: lib/kernel/stdio-kernel.c lib/kernel/stdio-kernel.h
 
 $(BUILD_DIR)/fs.o: fs/fs.c fs/fs.h fs/dir.h fs/inode.h fs/super_block.h kernel/memory.h  \
         device/ide.h lib/stdint.h lib/kernel/stdio-kernel.h lib/string.h kernel/debug.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/inode.o: fs/inode.c fs/inode.h lib/stdint.h lib/kernel/list.h \
+    	kernel/global.h fs/fs.h device/ide.h thread/sync.h thread/thread.h \
+     	lib/kernel/bitmap.h kernel/memory.h fs/file.h kernel/debug.h \
+      	kernel/interrupt.h lib/kernel/stdio-kernel.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/file.o: fs/file.c fs/file.h lib/stdint.h device/ide.h thread/sync.h \
+    	lib/kernel/list.h kernel/global.h thread/thread.h lib/kernel/bitmap.h \
+     	kernel/memory.h fs/fs.h fs/inode.h fs/dir.h lib/kernel/stdio-kernel.h \
+      	kernel/debug.h kernel/interrupt.h
+	$(CC) $(CFLAGS) $< -o $@
+
+$(BUILD_DIR)/dir.o: fs/dir.c fs/dir.h lib/stdint.h fs/inode.h lib/kernel/list.h \
+    	kernel/global.h device/ide.h thread/sync.h thread/thread.h \
+     	lib/kernel/bitmap.h kernel/memory.h fs/fs.h fs/file.h \
+      	lib/kernel/stdio-kernel.h kernel/debug.h kernel/interrupt.h
 	$(CC) $(CFLAGS) $< -o $@
 
 ######################### 汇编代码编译 #############################

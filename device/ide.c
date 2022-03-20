@@ -4,7 +4,7 @@
 #include "debug.h"
 #include "timer.h"
 #include "stdio.h"
-#include "memory.h"
+#include "../kernel/memory.h"
 #include "list.h"
 #include "stdio-kernel.h"
 #include "string.h"
@@ -82,7 +82,6 @@ static void select_disk(struct disk* hd){
         reg_device |= BIT_DEV_DEV;
     }
     outb(reg_dev(hd->my_channel), reg_device);   
-
 }
 
 /* 写入起始扇区地址和读写的扇区数 */
@@ -148,8 +147,8 @@ static bool busy_wait(struct disk* hd){
 
 /* 从硬盘中读取sec_cnt个扇区到 buf */
 void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt){
-    ASSERT(sec_cnt > 0);    
-    ASSERT(lba <= max_lba); 
+    ASSERT(sec_cnt > 0); 
+    ASSERT(lba <= max_lba);
     // 保持原子性
     lock_acquire(&hd->my_channel->lock);
     // 选取硬盘
@@ -184,7 +183,6 @@ void ide_read(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt){
         sec_done += sec_every;
     }
     lock_release(&hd->my_channel->lock);
-
 }
 
 void ide_write(struct disk* hd, uint32_t lba, void* buf, uint32_t sec_cnt){
@@ -284,8 +282,11 @@ static void identify_disk(struct disk* hd){
 
 /* 扫描硬盘hd中地址为ext_lba的扇区中的所有分区 */
 static void partition_scan(struct disk* hd, uint32_t ext_lba){
-    struct boot_sector* bs = sys_malloc(sizeof(struct boot_sector));
+    //printk("before partition_scan: sys_malloc \n");
+    struct boot_sector* bs = (struct boot_sector*)sys_malloc(sizeof(struct boot_sector));
+    //printk("before partition_scan: ide_read \n");
     ide_read(hd, ext_lba, bs, 1);       // 读取引导扇区
+    //printk("after partition_scan: ide_read \n");
     uint8_t part_num = 0;
     struct partition_table_entry* p = bs->partition_table;
 
@@ -304,7 +305,7 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba){
                 hd->primary_partition[p_no].sec_cnt = p->sec_cnt;
                 hd->primary_partition[p_no].my_disk = hd;
                 list_append(&partition_list, &hd->primary_partition[p_no].part_tag);
-                sprintf(hd->primary_partition[p_no].name, "%s%d", hd->name, p_no+1);
+                sprintf(hd->primary_partition[p_no].name, "%s%d", hd->name, p_no + 1);
                 p_no++;
                 ASSERT(p_no < 4);
             }else{                  // 
@@ -312,7 +313,7 @@ static void partition_scan(struct disk* hd, uint32_t ext_lba){
                 hd->logical_partition[l_no].sec_cnt = p->sec_cnt;
                 hd->logical_partition[l_no].my_disk = hd;
                 list_append(&partition_list, &hd->logical_partition[l_no].part_tag);
-                sprintf(hd->logical_partition[l_no].name, "%s%d", hd->name, l_no+5);
+                sprintf(hd->logical_partition[l_no].name, "%s%d", hd->name, l_no + 5);
                 l_no++;
                 if(l_no >= 8){
                     return;
@@ -332,6 +333,7 @@ static bool partition_info(struct list_elem* pelem, int arg UNUSED){
     return false;
 }
 
+// 初始化硬盘的数据结构
 void ide_init(){
     printk("ide_init start\n");
     uint8_t hd_cnt = *((uint8_t*) (0x475));     // 在低端1MB以内，获取硬盘的数量
@@ -374,8 +376,10 @@ void ide_init(){
             sprintf(hd->name, "sd%c", 'a' + channel_no * 2 + dev_no);
             identify_disk(hd);      // 获取硬盘参数
             if(dev_no != 0){            // 内核本身的硬盘不处理               
+               // printk("\n before partition_scan \n");
                 partition_scan(hd, 0);              // 扫描硬盘上的分区
-                printk("\n after scan slave partition\n");
+               // printk("\n after partition_scan \n");
+               // printk("\n after scan slave partition\n");
             }
             p_no = 0, l_no = 0;
             dev_no++;
@@ -383,7 +387,7 @@ void ide_init(){
         dev_no = 0;     // 驱动号置位0，为下一个channel的硬盘初始化
         channel_no++;
     }
-    printk("\n   all partition info\n");
+    printk(" all partition info\n");
     /* 打印所有分区信息 */
     list_traversal(&partition_list, partition_info, (int)NULL);
     printk("ide_init done\n");
