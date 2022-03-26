@@ -44,12 +44,11 @@ int main(void){
     read_bytes = sys_read(fd, buf,18);
     printf("3_ read %d bytes:\n%s\n", read_bytes, buf);
 
-    printf("_____ close file1  and reopen _____\n");
-    sys_close(fd);
-    fd = sys_open("/file1", O_RDWR);
+    printf("_____ SEEK_SET 0 _____\n");
+    sys_lseek(fd, 1, SEEK_SET);
     memset(buf, 0, 64);
     read_bytes = sys_read(fd, buf, 24);
-    printf("4_ read %d bytes:\n%s\n", read_bytes, buf);   
+    printf("4_ read %d bytes:\n%s\n", read_bytes, buf);
     sys_close(fd);
 
     while(1);

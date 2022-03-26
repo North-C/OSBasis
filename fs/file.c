@@ -513,8 +513,11 @@ int32_t file_read(struct file* file, void* buf, uint32_t count){
         bytes_read += chunk_size;
         size_left -= chunk_size;    
     }
-    
+
     sys_free(all_blocks);
     sys_free(io_buf);
     return bytes_read;
 }
+
+
+
