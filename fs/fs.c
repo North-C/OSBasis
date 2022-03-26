@@ -216,12 +216,6 @@ void filesys_init(){
                    
                     if(sb_buf->magic == 0x19590318){
                         printk("%s has filesystem\n", part->name);
-                        
-                        printk("%s info: \n", part->name);
-                        printk("   magic:0x%x\n   part_lba_base:0x%x\n   all_sectors:0x%x\n   inode_cnt:0x%x\n   block_bitmap_lba:0x%x\n  \
-                            block_bitmap_sectors:0x%x\n   inode_bitmap_lba:0x%x\n   inode_bitmap_sectors:0x%x\n   inode_table_lba:0x%x\n   inode_table_sectors:0x%x\n   data_start_lba:0x%x\n", \
-                            cur_partition->sb->magic, cur_partition->sb->part_lba_base, cur_partition->sb->sec_cnt, cur_partition->sb->inode_cnt, cur_partition->sb->block_bitmap_lba, cur_partition->sb->block_bitmap_sects, cur_partition->sb->inode_bitmap_lba, \
-                            cur_partition->sb->inode_bitmap_sects, cur_partition->sb->inode_table_lba, cur_partition->sb->inode_table_sects, cur_partition->sb->data_start_lba);
                     }else{
                         printk("formatting %s's partition %s...... \n", hd->name, part->name);
                         partition_format(part);
@@ -455,4 +449,15 @@ int32_t sys_write(int32_t fd, const void* buf, uint32_t count){
                 without flag O_RDWR or O_WRONLY\n");
         return -1;
     }
+}
+
+/* 从文件描述符fd指向的文件中读取count个字节到buf中，成功则返回读出的字节数，到文件尾部则返回-1 */
+int32_t sys_read(int32_t fd, void* buf, uint32_t count){
+    if(fd < 0){
+        printk("sys_read: fd error\n");
+        return -1;
+    }
+    ASSERT(buf != NULL);
+    uint32_t _fd = fd_local2global(fd);
+    return file_read(&file_table[_fd], buf, count);
 }
