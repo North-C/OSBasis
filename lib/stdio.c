@@ -80,7 +80,7 @@ uint32_t printf(const char *format, ...){
     va_start(ap, format);       // 指向第一个固定参数      
     vsprintf(buf, format, ap);
     va_end(ap); 
-    return write(buf);         // 调用系统调用进行输出
+    return write(1, buf, strlen(buf));         // 调用系统调用进行输出
 }
 
 /* 将字符串写入到buf,返回字符串的长度 */

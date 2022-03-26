@@ -27,10 +27,13 @@ int main(void){
     process_execute(u_thread_b, "user_prog_b");
     thread_start("kthread_a", 31, k_thread_a, "I am thread_a ");
     thread_start("kthread_b", 31, k_thread_b, "I am thread_b ");
-    uint32_t fd = sys_open("/file1", O_RDONLY);
-    printf("fd:%d\n", fd);
-    sys_close(fd);
-    printf("fd:%d closed now\n", fd);
+
+    sys_open("/file0", O_CREAT);
+   //uint32_t fd = sys_open("/file1", O_RDWR);
+   //  printf("fd:%d\n", fd);
+   //  sys_write(fd, "hello world!\n", 12);
+   //  sys_close(fd);
+   //  printf("fd:%d closed now\n", fd);
     while(1);
     return 0;
 }

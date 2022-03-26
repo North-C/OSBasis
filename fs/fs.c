@@ -9,6 +9,7 @@
 #include "string.h"
 #include "debug.h"
 #include "file.h"
+#include "console.h"
 
 
 struct partition* cur_partition;            // 默认情况下操作的分区
@@ -215,6 +216,12 @@ void filesys_init(){
                    
                     if(sb_buf->magic == 0x19590318){
                         printk("%s has filesystem\n", part->name);
+                        
+                        printk("%s info: \n", part->name);
+                        printk("   magic:0x%x\n   part_lba_base:0x%x\n   all_sectors:0x%x\n   inode_cnt:0x%x\n   block_bitmap_lba:0x%x\n  \
+                            block_bitmap_sectors:0x%x\n   inode_bitmap_lba:0x%x\n   inode_bitmap_sectors:0x%x\n   inode_table_lba:0x%x\n   inode_table_sectors:0x%x\n   data_start_lba:0x%x\n", \
+                            cur_partition->sb->magic, cur_partition->sb->part_lba_base, cur_partition->sb->sec_cnt, cur_partition->sb->inode_cnt, cur_partition->sb->block_bitmap_lba, cur_partition->sb->block_bitmap_sects, cur_partition->sb->inode_bitmap_lba, \
+                            cur_partition->sb->inode_bitmap_sects, cur_partition->sb->inode_table_lba, cur_partition->sb->inode_table_sects, cur_partition->sb->data_start_lba);
                     }else{
                         printk("formatting %s's partition %s...... \n", hd->name, part->name);
                         partition_format(part);
@@ -423,4 +430,29 @@ int32_t sys_close(int32_t fd){
         running_thread()->fd_table[fd] = -1;        // 可用
     }
     return ret;
+}
+
+/* 将buf中连续count个字节写入文件描述符fd, 成功则返回写入的字节数，失败返回-1 */
+int32_t sys_write(int32_t fd, const void* buf, uint32_t count){
+    if(fd < 0){
+        printk("sys_write: fd error\n");
+        return -1;
+    }
+    if (fd == stdout_no){
+        char tmp_buf[1024] = {0};
+        memcpy(tmp_buf, buf, count);
+        console_put_str(tmp_buf);
+        return count;
+    }
+    uint32_t _fd = fd_local2global(fd);     // 转换为全局的文件描述符
+    struct file* wr_file = &file_table[_fd];
+    // 判断读写权限
+    if(wr_file->fd_flag & O_WRONLY || wr_file->fd_flag & O_RDWR){
+        uint32_t bytes_written = file_write(wr_file, buf, count);
+        return bytes_written;
+    }else{
+        console_put_str("sys_write: not allowed to write file \
+                without flag O_RDWR or O_WRONLY\n");
+        return -1;
+    }
 }

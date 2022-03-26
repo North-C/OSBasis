@@ -7,7 +7,7 @@
 #include "console.h"
 #include "../lib/string.h"
 #include "../kernel/memory.h"
-
+#include "../fs/fs.h"
 
 #define syscall_nr 32
 typedef void* syscall;     // 指针，指向函数入口
@@ -17,11 +17,6 @@ uint32_t sys_getpid(void){  // 为什么返回的是uint32_t ，而不是int16_t
     return running_thread()->pid;
 }
 
-/* 输出str到屏幕 */
-uint32_t sys_write(char *str){  // 为什么返回的是uint32_t ，而不是int16_t????
-    console_put_str(str);
-    return strlen(str);
-}
 
 /* 初始化系统调用 */
 void syscall_init(void){
