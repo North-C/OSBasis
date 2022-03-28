@@ -39,4 +39,5 @@ void create_dir_entry(char* filename, uint32_t inode_no, uint8_t file_type, stru
 /* 将目录项p_de写入父目录 parent_dir中，io_buf由主调函数提供 */
 bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf);
 
+bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_no, void* io_buf);
 #endif

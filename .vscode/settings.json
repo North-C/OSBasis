@@ -16,6 +16,8 @@
         "type_traits": "c",
         "io.h": "c",
         "print.h": "c",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "super_block.h": "c",
+        "inode.h": "c"
     }
 }
