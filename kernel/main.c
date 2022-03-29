@@ -29,19 +29,16 @@ int main(void){
     thread_start("kthread_a", 31, k_thread_a, "I am thread_a ");
     thread_start("kthread_b", 31, k_thread_b, "I am thread_b ");
 
-
-    printf("/dir1/subdir1 create %s!\n", sys_mkdir("/dir1/subdir1")== 0 ? "done": "fail");
-    printf("/dir1 create %s!\n", sys_mkdir("/dir1") == 0? "done": "fail");
-    printf("Again, /dir1/subdir1 create %s!\n", sys_mkdir("/dir1/subdir1")== 0 ? "done": "fail");
-    int fd = sys_open("/dir1/subdir1/file2", O_CREAT | O_RDWR);
-    if(fd != -1){
-       printf("/dir1/subdir1/file2 create done!\n");
-       sys_write(fd, "Catch me if you can!\n", 21);
-       sys_lseek(fd, 0, SEEK_SET);
-       char buf[32] = {0};
-       sys_read(fd, buf, 21);
-       printf("/dir1/subdir1/file2 says:\n%s", buf);
-       sys_close(fd);
+    struct dir* p_dir = sys_opendir("/dir1/subdir1");
+    if(p_dir){
+       printf("/dir1/subdir1 open done!\n");
+       if(sys_closedir(p_dir) == 0){
+          printf("/dir1/subdir1 close done!\n");
+       }else{
+          printf("/dir1/subdir1 close failed!\n");
+       }
+    }else{
+      printf("/dir1/subdir1 open fail!\n");
     }
     while(1);
     return 0;
