@@ -155,11 +155,10 @@ int32_t file_create(struct dir* parent_dir, char* filename, uint8_t flag){
     inode_sync(cur_partition, new_file_inode, io_buf);
 
     // 同步inode表到硬盘中
-    bitmap_sync(cur_partition, fd_table_idx , INODE_BITMAP);
+    bitmap_sync(cur_partition, new_inode_no, INODE_BITMAP);
 
     // 将当前的inode添加到当前打开文件链表当中
     list_push(&cur_partition->open_inodes, &new_file_inode->inode_tag);
-
     new_file_inode->i_open_cnts = 1;
     sys_free(io_buf);
     // 将inode安装到进程的文件打开表
@@ -169,7 +168,7 @@ int32_t file_create(struct dir* parent_dir, char* filename, uint8_t flag){
 rollback:
     switch(rollback_step){
         case 3:
-            memset( file_table+fd_table_idx, 0, sizeof(struct file));
+            memset( &file_table[fd_table_idx], 0, sizeof(struct file));
         case 2:
             sys_free(new_file_inode);
         case 1:

@@ -149,7 +149,7 @@ bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf
             // 分配后同步一次
             block_bitmap_idx = block_lba - cur_partition->sb->data_start_lba;
             ASSERT(block_bitmap_idx != -1);
-            bitmap_sync(cur_partition, block_idx, BLOCK_BITMAP);
+            bitmap_sync(cur_partition, block_bitmap_idx, BLOCK_BITMAP);
 
             block_bitmap_idx = -1;
             if(block_idx < 12){     // 直接块,直接保存到inode当中
@@ -163,7 +163,7 @@ bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf
                 if(block_lba == -1){        // 分配失败,还原设置，输出错误信息
                     block_bitmap_idx = dir_inode->i_sectors[12]  \
                                 - cur_partition->sb->data_start_lba;
-                    bitmap_set(&cur_partition->block_bitmap, block_idx, 0);
+                    bitmap_set(&cur_partition->block_bitmap, block_bitmap_idx, 0);
                     dir_inode->i_sectors[12] = 0;
                     printk("alloc block bitmap for sync_dir_entry failed\n");
                     return false;
@@ -258,7 +258,7 @@ bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_n
                             // 统计扇区内的目录项个数，判断是否在删除后回收该扇区
                             if((dir_e + dir_entry_idx)->i_no == inode_no){
                             // 如果找到此i结点，就将其记录在dir_entry_found 
-                                ASSERT(dir_entry_idx == NULL);
+                                ASSERT(dir_entry_found == NULL);
                                 dir_entry_found = dir_e + dir_entry_idx;
                             }
                         }
@@ -320,3 +320,70 @@ bool delete_dir_entry(struct partition* part, struct dir* pdir, uint32_t inode_n
 // 没找到对应的目录项
     return false;
 }
+/* 读取目录，成功则返回一个目录项，失败返回NULL */
+struct dir_entry* dir_read(struct dir* dir){
+    struct dir_entry* dir_e = (struct dir_entry*)dir->dir_buf;
+    struct inode* dir_inode = dir->inode;
+    uint32_t all_blocks[140] = {0};
+    uint32_t block_idx = 0, dir_entry_idx = 0;
+    uint32_t block_cnt = 12;
+
+    while(block_idx < 12){
+        all_blocks[block_idx] = dir_inode->i_sectors[block_idx];
+        block_idx++;
+    }
+    if(dir_inode->i_sectors[12] != 0){  // 含有一级间接表
+        ide_read(cur_partition->my_disk, dir_inode->i_sectors[12], all_blocks + 12, 1);
+        block_cnt = 140;
+    }
+    block_idx = 0;
+
+    uint32_t cur_dir_entry_offset = 0;     // 当前目录项的偏移
+    uint32_t dir_entry_size = cur_partition->sb->dir_entry_size;
+    uint32_t dir_entry_per_sec = SECTOR_SIZE / dir_entry_size;
+    // 遍历所有块
+    while(block_idx < block_cnt){
+        if(dir->dir_pos >= dir_inode->i_size){
+            return NULL;
+        }
+        if(all_blocks[block_idx] == 0){ // 继续读下一块
+            block_idx++;
+            continue;
+        }
+        memset(dir_e, 0, 512);
+        ide_read(cur_partition->my_disk, all_blocks[block_idx], dir_e, 1);
+        dir_entry_idx = 0;
+
+        // 遍历对应扇区内的目录项
+        while(dir_entry_idx < dir_entry_per_sec){
+            if((dir_e+dir_entry_idx)->f_type != FT_UNKNOWN){
+                // 查找到对应的位置
+                if(cur_dir_entry_offset < dir->dir_pos){
+                    cur_dir_entry_offset += dir_entry_size;
+                    dir_entry_idx++;
+                    continue;
+                }
+
+                ASSERT(cur_dir_entry_offset == dir->dir_pos);
+                dir->dir_pos += dir_entry_size;
+                // 更新为新位置，下一个返回的目录项地址
+                return dir_e+dir_entry_idx;
+            }
+            dir_entry_idx++;
+        }
+        block_idx++;
+    }
+    return NULL;
+}
+
+
+
+
+
+
+
+
+
+
+
+

@@ -14,6 +14,7 @@
 #include "../lib/stdio.h"
 #include "../fs/fs.h"
 #include "../lib/string.h"
+#include "../fs/dir.h"
 
 void k_thread_a(void* arg);
 void k_thread_b(void* arg);
@@ -23,15 +24,19 @@ void u_thread_b(void);
 int main(void){
     put_str("I am kernel\n");
     init_all();
-    // 具体的取值和调度、阻塞的时机相关    
-    process_execute(u_thread_a, "user_prog_a");
-    process_execute(u_thread_b, "user_prog_b");
-    thread_start("kthread_a", 31, k_thread_a, "I am thread_a ");
-    thread_start("kthread_b", 31, k_thread_b, "I am thread_b ");
-
     struct dir* p_dir = sys_opendir("/dir1/subdir1");
     if(p_dir){
-       printf("/dir1/subdir1 open done!\n");
+       printf("/dir1/subdir1 open done!\n content:\n ");
+       char* type = NULL;
+       struct dir_entry* dir_e = NULL;
+       while((dir_e = sys_readdir(p_dir))){
+          if(dir_e->f_type == FT_REGULAR){
+             type = "Regular";
+          }else{
+             type = "Directory";
+          }
+          printf("  %s   %s\n", type, dir_e->filename);
+       }
        if(sys_closedir(p_dir) == 0){
           printf("/dir1/subdir1 close done!\n");
        }else{

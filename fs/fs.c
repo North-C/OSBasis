@@ -492,7 +492,7 @@ int32_t sys_lseek(int32_t fd, int32_t offset, uint8_t whence){
 
 /* 删除文件（非目录），成功则返回0， 失败则返回-1 */
 int32_t sys_unlink(const char* pathname){
-    ASSERT(strlen(pathname) > 0);
+    ASSERT(strlen(pathname) < MAX_PATH_LEN);
 
     /* 先检查待删除的文件是否存在 */
     struct path_search_record searched_record;
@@ -699,3 +699,15 @@ int32_t sys_closedir(struct dir* dir){
     }
     return ret;
 }
+
+/* 读取目录die的我一个目录项，成功后返回目录项地址，到末尾或失败则返回NULL */
+struct dir_entry* sys_readdir(struct dir* dir){
+    ASSERT(dir!=NULL);
+    return dir_read(dir);
+}
+
+/* 把目录dir的指针dir_pos置位0 */
+void sys_rewinddir(struct dir* dir){
+    dir->dir_pos = 0;
+}
+
