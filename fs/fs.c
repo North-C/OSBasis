@@ -711,3 +711,35 @@ void sys_rewinddir(struct dir* dir){
     dir->dir_pos = 0;
 }
 
+/* 删除空目录pathname，成功则返回0， 失败则返回-1 */
+int32_t sys_rmdir(const char* pathname){
+    // 先找到目标空目录
+    struct path_search_record searched_record;
+    int32_t inode_no = search_file(pathname, &searched_record);
+    int32_t retval = -1;
+    if(inode_no == -1){
+        printk("sys_rmdir: %s isn't exist.\n", pathname);
+    }else{
+        // 判断是否为空
+        if(searched_record.file_type == FT_REGULAR){
+            printk("sys_rmdir can't remove regular file, use sys_unlink!\n");
+        }else{
+            struct dir* dir = dir_open(cur_partition, inode_no);
+            if(!dir_is_empty(dir)){     // 不为空目录
+                printk("sys_rmdir: %s is not empty.!\n", pathname);
+            }else{
+                if(!dir_remove(searched_record.parent_dir, dir)){
+                    retval = 0;
+                }
+            }
+            dir_close(dir);
+        }
+    }
+    dir_close(searched_record.parent_dir);
+    return retval;
+}
+
+// /* 获取当前工作目录 */
+// char* getcwd(const char* pathname){
+
+// }

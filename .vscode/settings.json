@@ -18,6 +18,7 @@
         "print.h": "c",
         "cstdlib": "c",
         "super_block.h": "c",
-        "inode.h": "c"
+        "inode.h": "c",
+        "stdio.h": "c"
     }
 }

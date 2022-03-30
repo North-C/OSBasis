@@ -116,7 +116,7 @@ bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf
     
     struct inode* dir_inode = parent_dir->inode;
     uint32_t dir_size = dir_inode->i_size;
-    uint32_t dir_entry_size = dir_inode->i_size;
+    uint32_t dir_entry_size = cur_partition->sb->dir_entry_size;
 
     // dir_size应该是dir_entry_size的整数倍
     ASSERT(dir_size % dir_entry_size == 0);
@@ -158,7 +158,7 @@ bool sync_dir_entry(struct dir* parent_dir, struct dir_entry* p_de, void* io_buf
             }else if(block_idx == 12){  // 一级间接块
                 // 分配间接块表
                 dir_inode->i_sectors[12] = block_lba;
-                block_bitmap_idx = -1;
+                block_lba = -1;
                 block_lba = block_bitmap_alloc(cur_partition);
                 if(block_lba == -1){        // 分配失败,还原设置，输出错误信息
                     block_bitmap_idx = dir_inode->i_sectors[12]  \
@@ -376,7 +376,35 @@ struct dir_entry* dir_read(struct dir* dir){
     return NULL;
 }
 
+/* 判断目录是否为空,是则返回true,否则返回false */
+bool dir_is_empty(struct dir* dir){
+    struct inode* dir_inode = dir->inode;
+    // 只有 "." 和".."两个目录项时，则表示为空
+    return (dir_inode->i_size == cur_partition->sb->dir_entry_size * 2);
+}
 
+/* 从父目录parent_dir中删除child_dir */
+int32_t dir_remove(struct dir* parent_dir, struct dir* child_dir){
+    struct inode* child_dir_inode = child_dir->inode;
+
+    // child_dir应该为空目录，空目录只存在于inode_i_sectors[0]中有扇区，其他扇区应该都为空
+    int32_t block_idx = 1;
+    while(block_idx < 13){
+        ASSERT(child_dir_inode->i_sectors[block_idx] == 0);
+        block_idx++;
+    }
+
+    void* io_buf = sys_malloc(SECTOR_SIZE * 2);
+    if(io_buf == NULL){
+        printk("dir_is_empty: sys_malloc for io_buf failed\n");
+        return -1;
+    }
+    delete_dir_entry(cur_partition, parent_dir, child_dir_inode->i_no, io_buf);
+
+    inode_release(cur_partition, child_dir_inode->i_no);
+    sys_free(io_buf);
+    return 0;
+}
 
 
 
