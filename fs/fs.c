@@ -860,3 +860,30 @@ int32_t sys_chdir(const char* path){
     dir_close(searched_record.parent_dir);
     return ret;
 }
+/* 在buf中填充文件结构相关信息，成功时返回0，失败返回-1 */
+int32_t sys_stat(const char* path, struct stat* buf){
+    /* 若直接查看根目录 */
+    if(!strcmp(path, "/") || !strcmp(path, "/.") || !strcmp(path, "/..")){
+        buf->st_filetype = FT_DIRECTORY;
+        buf->st_ino = 0;
+        buf->st_size = root_dir.inode->i_size;
+        return 0;
+    }
+
+    int32_t ret = -1;  // 返回值
+    // 查找对应的文件或目录
+    struct path_search_record searched_path;
+    memset(&searched_path, 0, sizeof(struct path_search_record));
+    int inode_no = search_file(path, &searched_path);
+    if(inode_no == -1){
+        printk("sys_stat: search_file %s failed\n", path);
+    }else{
+        struct inode* target = inode_open(cur_partition, inode_no);
+        buf->st_size = target->i_size;
+        buf->st_filetype = searched_path.file_type;
+        buf->st_ino = inode_no;
+        ret = 0;
+    }
+    dir_close(searched_path.parent_dir);
+    return ret;
+} 
