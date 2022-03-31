@@ -79,6 +79,7 @@ struct task_struct{
     uint32_t* pgdir;            // 进程自己页表的虚拟地址，只有进程有页表，而线程沒有页表
     struct virtual_addr userprog_vaddr;     //用户进程的虚拟地址
     struct mem_block_desc u_block_desc[DESC_INT];        // 用户进程的内存块描述符数组
+    uint32_t cwd_inode_nr;      // 进程所在的工作目录的inode编号
     uint32_t stack_magic;       // 魔数设计为0x19870916，栈的边界标记，用于检测栈的溢出。中断处理时可以检测是否PCB被初始化
 };
 extern struct list thread_ready_list;

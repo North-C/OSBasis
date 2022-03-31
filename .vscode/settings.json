@@ -19,6 +19,7 @@
         "cstdlib": "c",
         "super_block.h": "c",
         "inode.h": "c",
-        "stdio.h": "c"
+        "stdio.h": "c",
+        "fs.h": "c"
     }
 }

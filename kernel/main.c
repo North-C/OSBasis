@@ -22,56 +22,19 @@ void u_thread_a(void);
 void u_thread_b(void);
 
 int main(void){
-    put_str("I am kernel\n");
-    init_all();
-
-   printf("/dir2 content before delete /dir2/subdir1:\n");
-   sys_mkdir("/dir2");
-   sys_mkdir("/dir2/subdir1");
-   int32_t inode_no = sys_open("/dir2/subdir1/file1", O_CREAT | O_RDWR);
-   sys_close(inode_no);
-   struct dir* dir = sys_opendir("/dir2/");
-   char* type = NULL;
-   struct dir_entry* dir_e = NULL;
-   while((dir_e = sys_readdir(dir))) { 
-      if (dir_e->f_type == FT_REGULAR) {
-	      type = "regular";
-      } else {
-	      type = "directory";
-      }
-      printf("      %s   %s\n", type, dir_e->filename);
-   }
-   printf("try to delete nonempty directory /dir2/subdir1\n");
-   if (sys_rmdir("/dir2/subdir1") == -1) {
-      printf("sys_rmdir: /dir2/subdir1 delete fail!\n");
-   }
-
-   printf("try to delete /dir2/subdir1/file1\n");
-   if (sys_rmdir("/dir2/subdir1/file1") == -1) {
-      printf("sys_rmdir: /dir1/subdir1/file1 delete fail!\n");
-   } 
-   if (sys_unlink("/dir2/subdir1/file1") == 0 ) {
-      printf("sys_unlink: /dir1/subdir1/file1 delete done\n");
-   }
+   put_str("I am kernel\n");
+   init_all();
    
-   printf("try to delete directory /dir2/subdir1 again\n");
-   if (sys_rmdir("/dir2/subdir1") == 0) {
-      printf("/dir2/subdir1 delete done!\n");
-   }
+   char cwd_buf[32] = {0};
+   sys_getcwd(cwd_buf, 32);
+   printf("cwd:%s\n", cwd_buf);
+   sys_chdir("/dir1");
+   printf("change cwd now\n");
+   sys_getcwd(cwd_buf, 32);
+   printf("cwd:%s\n", cwd_buf);
 
-   printf("/dir2 content after delete /dir2/subdir1:\n");
-   sys_rewinddir(dir);
-   while((dir_e = sys_readdir(dir))) { 
-      if (dir_e->f_type == FT_REGULAR) {
-	      type = "regular";
-      } else {
-	       type = "directory";
-      }
-      printf("      %s   %s\n", type, dir_e->filename);
-   }
-
-    while(1);
-    return 0;
+   while(1);
+   return 0;
 }
 
 void  k_thread_a(void* arg){
@@ -129,7 +92,7 @@ void u_thread_a(void){
 }
 
 void u_thread_b(void){
-     void* addr1 = malloc(256);
+   void* addr1 = malloc(256);
    void* addr2 = malloc(255);
    void* addr3 = malloc(254);
    printf(" prog_b malloc addr:0x%x,0x%x,0x%x\n", (int)addr1, (int)addr2, (int)addr3);

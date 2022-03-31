@@ -173,7 +173,7 @@ void init_thread(struct task_struct* pthread, char* name, int priority){
         pthread->fd_table[fd_idx] = -1;         // 赋值为 -1
         fd_idx++;
     }
-
+    pthread->cwd_inode_nr = 0;      // 以根目录为默认工作路径
     pthread->stack_magic = 0x19870916;      // 自定义的魔数
 }
 
